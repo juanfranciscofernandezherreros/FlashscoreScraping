@@ -18,6 +18,7 @@ import {
   getStatsPlayer,
   getPointByPoint
 } from "./utils/index.js";
+import { BASE_URL } from "./constants/index.js";
 
 // Function to get current date in DD_MM_YYYY format
 const getFormattedDate = () => {
@@ -67,7 +68,7 @@ const createFolderIfNotExist = (folderPath) => {
 const generateMatchCSVs = async (browser, match, competitionFolderPath, includeOptions) => {
   const matchId = match.matchId.replace('g_3_', '');
   const matchFolderPath = path.join(competitionFolderPath, match.matchId);
-  const matchUrl = `https://example.com/match/${matchId}`; // Replace with actual URL pattern
+  const matchUrl = `${BASE_URL}/match/${matchId}/#/match-summary/match-summary`;
 
   createFolderIfNotExist(matchFolderPath);
 
@@ -168,7 +169,7 @@ const generateMatchCSVs = async (browser, match, competitionFolderPath, includeO
   createFolderIfNotExist(fixturesFolderPath);
 
   const browser = await puppeteer.launch({
-    headless: true,
+    headless: "new",
     executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
     // --no-sandbox is required when running Puppeteer inside a Docker container
     // (Chrome cannot use sandboxing without root privileges in that environment)

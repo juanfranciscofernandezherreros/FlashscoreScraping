@@ -1,13 +1,11 @@
 import fs from "fs";
 import path from "path";
 
-import { BASE_URL } from "../constants/index.js";
-import { match } from "assert";
-import { clearScreenDown } from "readline";
+import { BASE_URL, BASKETBALL_URL } from "../constants/index.js";
 
 export const getMatchIdList = async (browser, country, league) => {
   const page = await browser.newPage();
-  const url = `${BASE_URL}/basketball/${country}/${league}/results/`;
+  const url = `${BASKETBALL_URL}/${country}/${league}/results/`;
   await page.goto(url);
 
   try {
@@ -81,7 +79,7 @@ async function extractEventData(page) {
 
 export const getFixtures = async (browser, country, league) => {
   const page = await browser.newPage();
-  const url = `${BASE_URL}/basketball/${country}/${league}/fixtures/`;
+  const url = `${BASKETBALL_URL}/${country}/${league}/fixtures/`;
   await page.goto(url);  
   while (true) {
     try {
