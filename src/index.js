@@ -167,7 +167,13 @@ const generateMatchCSVs = async (browser, match, competitionFolderPath, includeO
   createFolderIfNotExist(resultsFolderPath);
   createFolderIfNotExist(fixturesFolderPath);
 
-  const browser = await puppeteer.launch({ headless: true });
+  const browser = await puppeteer.launch({
+    headless: true,
+    executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
+    // --no-sandbox is required when running Puppeteer inside a Docker container
+    // (Chrome cannot use sandboxing without root privileges in that environment)
+    args: ['--no-sandbox', '--disable-setuid-sandbox'],
+  });
 
   try {
     const includeOptions = { 
