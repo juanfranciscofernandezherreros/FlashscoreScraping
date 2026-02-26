@@ -356,7 +356,8 @@ export const getAllBasketballResults = async (browser) => {
         const awayTeam = el.querySelector('.event__participant--away')?.textContent.trim() || '';
         const homeScore = el.querySelector('.event__score--home')?.textContent.trim() || '';
         const awayScore = el.querySelector('.event__score--away')?.textContent.trim() || '';
-        const matchStatus = el.querySelector('.event__stage--block')?.textContent.trim() || '';
+        const matchStatus = el.querySelector('.event__stage--block, .event__stage')?.textContent.trim() || '';
+        const result = (homeScore || awayScore) ? `${homeScore}-${awayScore}` : '';
 
         const homeScoreParts = [];
         const awayScoreParts = [];
@@ -370,10 +371,13 @@ export const getAllBasketballResults = async (browser) => {
         data.push({
           country: currentCountry,
           league: currentLeague,
+          competition: currentLeague,
           round: currentRound,
           matchId,
           eventTime,
+          state: matchStatus,
           matchStatus,
+          result,
           homeTeam,
           awayTeam,
           homeScore,
