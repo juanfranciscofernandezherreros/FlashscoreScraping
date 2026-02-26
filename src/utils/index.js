@@ -546,6 +546,8 @@ export const getStandings = async (browser, country, league) => {
 };
 
 export const getCountriesAndLeagues = async (browser) => {
+  const MAX_EXPANSION_ATTEMPTS = 10;
+  const EXPANSION_WAIT_MS = 500;
   const page = await browser.newPage();
   const url = `${BASKETBALL_URL}/`;
   await page.goto(url, { waitUntil: 'networkidle2', timeout: 60000 });
@@ -553,7 +555,7 @@ export const getCountriesAndLeagues = async (browser) => {
 
   // Click "Show more" in the left menu to reveal all countries
   try {
-    for (let i = 0; i < 10; i++) {
+    for (let i = 0; i < MAX_EXPANSION_ATTEMPTS; i++) {
       const showMoreClicked = await page.evaluate(() => {
         const leftMenu = document.getElementById('category-left-menu');
         if (!leftMenu) return false;
@@ -579,7 +581,7 @@ export const getCountriesAndLeagues = async (browser) => {
         return false;
       });
       if (!showMoreClicked) break;
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await new Promise(resolve => setTimeout(resolve, EXPANSION_WAIT_MS));
     }
   } catch (error) {
     // If clicking "Show more" fails, continue with whatever is visible
