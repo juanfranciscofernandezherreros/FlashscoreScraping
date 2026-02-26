@@ -719,7 +719,7 @@ async function testCSVDataSummaryForResults() {
   console.log = origLog;
   const summaryLog = logs.find(l => l.includes('📊'));
   assert(!!summaryLog, 'Data summary log is printed after CSV generation');
-  assert(summaryLog.includes('1 records'), 'Summary includes correct record count');
+  assert(summaryLog.includes('1 record'), 'Summary includes correct record count');
   assert(summaryLog.includes('4 columns'), 'Summary includes correct column count');
 }
 
