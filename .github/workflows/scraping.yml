@@ -45,3 +45,12 @@ jobs:
             
       - name: Run basketball
         run: npm run basketball
+        
+      - name: Run results
+        run: npm run results
+
+      - name: Run fixtures
+        run: npm run fixtures
+
+      - name: Run competitions
+        run: npm run competitions
