@@ -11,6 +11,7 @@ import {
 } from "./csvGenerator.js";
 import { formatFecha } from "./fecha.js";
 import {
+  getAllBasketballResults,
   getFixtures,
   getMatchIdList,
   getStatsMatch,
@@ -212,6 +213,30 @@ const generateMatchCSVs = async (browser, match, competitionFolderPath, includeO
           await generateMatchCSVs(browser, match, competitionFolderPath, includeOptions);
         } catch (error) {
           logError(matchId, args, `Error processing match ${match.matchId} URL: https://example.com/match/${matchId}: ${error.message}`);
+        }
+      }
+    } else if (args.action === "all-results") {
+      logInfo("Fetching all basketball results from the main page...");
+      const allResults = await getAllBasketballResults(browser);
+      logInfo(`Total matches found across all leagues: ${allResults.eventDataList.length}`);
+      const fechaActual = new Date();
+      const formattedFecha = formatFecha(fechaActual);
+      const allResultsFilePath = path.join(resultsFolderPath, `ALL_BASKETBALL_RESULTS_${formattedFecha}.csv`);
+      generateCSVDataResults(allResults.eventDataList, allResultsFilePath.replace('.csv', ''));
+      logInfo("All basketball results CSV file generated.");
+
+      for (const match of allResults.eventDataList) {
+        if (!match.matchId) continue;
+        const leagueFolder = match.country && match.league
+          ? `${match.country}_${match.league}`.replace(/[/\\?%*:|"<>]/g, '_')
+          : 'unknown_league';
+        const leagueFolderPath = path.join(resultsFolderPath, leagueFolder);
+        createFolderIfNotExist(leagueFolderPath);
+        logInfo(`Processing match: ${match.matchId} (${match.homeTeam} vs ${match.awayTeam})`);
+        try {
+          await generateMatchCSVs(browser, match, leagueFolderPath, includeOptions);
+        } catch (error) {
+          logError(match.matchId, args, `Error processing match ${match.matchId}: ${error.message}`);
         }
       }
     } else if (args.action === "fixtures") {

@@ -10,6 +10,7 @@
     "competitions": "node src/scrapeCountries.js",
     "read-csv": "node src/readAllCsv.js",
     "results": "node src/competitionResults.cjs",
+    "all-results": "node src/index.js action=all-results",
     "fixtures": "node src/competitionFixtures.cjs"
   },
   "keywords": [

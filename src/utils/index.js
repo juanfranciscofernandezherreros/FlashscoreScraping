@@ -3,6 +3,78 @@ import path from "path";
 
 import { BASE_URL, BASKETBALL_URL } from "../constants/index.js";
 
+export const getAllBasketballResults = async (browser) => {
+  const page = await browser.newPage();
+  const url = `${BASKETBALL_URL}/`;
+  await page.goto(url, { waitUntil: 'networkidle2' });
+
+  try {
+    await autoScroll(page);
+  } catch (error) {
+    console.error("Error while scrolling:", error);
+  }
+
+  const eventDataList = await page.evaluate(() => {
+    const results = [];
+    let currentLeague = null;
+    let currentCountry = null;
+
+    const elements = document.querySelectorAll('.event__header, .event__match');
+
+    elements.forEach((element) => {
+      // League header element - extract country and league name
+      if (element.classList.contains('event__header')) {
+        const countryEl = element.querySelector('.event__title--type');
+        const leagueEl = element.querySelector('.event__title--name');
+        currentCountry = countryEl ? countryEl.textContent.trim() : null;
+        currentLeague = leagueEl ? leagueEl.textContent.trim() : null;
+        return;
+      }
+
+      // Match element
+      if (element.classList.contains('event__match')) {
+        const matchId = element.id ? element.id.replace(/^g_\d+_/, '') : null;
+        const eventTime = element.querySelector('.event__time')?.textContent.trim() || null;
+        const homeTeam = element.querySelector('.event__participant--home')?.textContent.trim() || null;
+        const awayTeam = element.querySelector('.event__participant--away')?.textContent.trim() || null;
+        const homeScore = element.querySelector('.event__score--home')?.textContent.trim() || null;
+        const awayScore = element.querySelector('.event__score--away')?.textContent.trim() || null;
+
+        const getPartScore = (side, part) => {
+          const el = element.querySelector(`.event__part--${side}.event__part--${part}`);
+          return el ? el.textContent.trim() : null;
+        };
+
+        results.push({
+          country: currentCountry,
+          league: currentLeague,
+          matchId,
+          eventTime,
+          homeTeam,
+          awayTeam,
+          homeScore,
+          awayScore,
+          homeScore1: getPartScore('home', '1'),
+          homeScore2: getPartScore('home', '2'),
+          homeScore3: getPartScore('home', '3'),
+          homeScore4: getPartScore('home', '4'),
+          homeScore5: getPartScore('home', '5'),
+          awayScore1: getPartScore('away', '1'),
+          awayScore2: getPartScore('away', '2'),
+          awayScore3: getPartScore('away', '3'),
+          awayScore4: getPartScore('away', '4'),
+          awayScore5: getPartScore('away', '5'),
+        });
+      }
+    });
+
+    return results;
+  });
+
+  await page.close();
+  return { eventDataList };
+};
+
 export const getMatchIdList = async (browser, country, league) => {
   const page = await browser.newPage();
   const url = `${BASKETBALL_URL}/${country}/${league}/results/`;
