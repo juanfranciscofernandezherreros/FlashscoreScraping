@@ -47,10 +47,7 @@ jobs:
         run: npm run basketball
         
       - name: Run results
-        run: npm run results
+        run: npm run results -- spain acb
 
       - name: Run fixtures
-        run: npm run fixtures
-
-      - name: Run competitions
-        run: npm run competitions
+        run: npm run fixtures -- spain acb
