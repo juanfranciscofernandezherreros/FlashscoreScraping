@@ -704,6 +704,42 @@ async function testGenerateCSVLineupsNull() {
   assert(!fs.existsSync(`${filePath}.csv`), 'Lineups CSV NOT created for null data');
 }
 
+// ─── CSV Data Summary Tests ────────────────────────────────────────
+
+async function testCSVDataSummaryForResults() {
+  console.log('\n--- Test: CSV data summary is logged for generateCSVDataResults ---');
+  const filePath = path.join(TEST_OUTPUT_DIR, 'TEST_SUMMARY_RESULTS');
+  const logs = [];
+  const origLog = console.log;
+  console.log = (...args) => { logs.push(args.join(' ')); origLog(...args); };
+  generateCSVDataResults([
+    { country: 'USA', league: 'NBA', homeTeam: 'Lakers', awayTeam: 'Celtics' },
+  ], filePath);
+  await new Promise(resolve => setTimeout(resolve, FILE_WRITE_DELAY_MS));
+  console.log = origLog;
+  const summaryLog = logs.find(l => l.includes('📊'));
+  assert(!!summaryLog, 'Data summary log is printed after CSV generation');
+  assert(summaryLog.includes('1 records'), 'Summary includes correct record count');
+  assert(summaryLog.includes('4 columns'), 'Summary includes correct column count');
+}
+
+async function testCSVDataSummaryForPlayerStats() {
+  console.log('\n--- Test: CSV data summary is logged for generateCSVPlayerStats ---');
+  const filePath = path.join(TEST_OUTPUT_DIR, 'TEST_SUMMARY_PLAYER_STATS');
+  const logs = [];
+  const origLog = console.log;
+  console.log = (...args) => { logs.push(args.join(' ')); origLog(...args); };
+  generateCSVPlayerStats([
+    { name: 'Player1', stats: { PTS: 20, REB: 5 } },
+    { name: 'Player2', stats: { PTS: 15, REB: 8 } },
+  ], filePath);
+  console.log = origLog;
+  const summaryLog = logs.find(l => l.includes('📊'));
+  assert(!!summaryLog, 'Data summary log is printed for player stats');
+  assert(summaryLog.includes('2 records'), 'Summary includes correct record count for player stats');
+  assert(summaryLog.includes('3 columns'), 'Summary includes correct column count for player stats');
+}
+
 // ─── Run All Tests ─────────────────────────────────────────────────
 
 (async () => {
@@ -765,6 +801,10 @@ async function testGenerateCSVLineupsNull() {
     await testGenerateCSVLineups();
     await testGenerateCSVLineupsEmpty();
     await testGenerateCSVLineupsNull();
+
+    // CSV data summary tests
+    await testCSVDataSummaryForResults();
+    await testCSVDataSummaryForPlayerStats();
   } finally {
     cleanup();
   }
