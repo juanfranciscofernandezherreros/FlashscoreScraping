@@ -555,7 +555,15 @@ export const getCountriesAndLeagues = async (browser) => {
       const links = leftMenu.querySelectorAll('a');
       for (const link of links) {
         const text = link.textContent.trim().toLowerCase();
-        if (text === 'show more' || text === 'show more...') {
+        const normalizedText = text.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        if (
+          normalizedText === 'show more' ||
+          normalizedText === 'show more...' ||
+          normalizedText === 'mostrar mas' ||
+          normalizedText === 'mostrar mas...' ||
+          normalizedText === 'ver mas' ||
+          normalizedText === 'ver mas...'
+        ) {
           link.click();
           return true;
         }
@@ -724,5 +732,4 @@ export const getMatchLineups = async (browser, matchId) => {
   await page.close();
   return lineupData;
 };
-
 

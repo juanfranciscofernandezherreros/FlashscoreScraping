@@ -295,7 +295,7 @@ async function extractFromPage(page) {
               <a href="/basketball/argentina/lnb/">LNB</a>
             </div>
           </div>
-          <a href="#" id="show-more-link">Show more</a>
+          <a href="#" id="show-more-link">Mostrar más</a>
         </div>
       </div>
       <script>
@@ -316,7 +316,15 @@ async function extractFromPage(page) {
       const links = leftMenu.querySelectorAll('a');
       for (const link of links) {
         const text = link.textContent.trim().toLowerCase();
-        if (text === 'show more' || text === 'show more...') {
+        const normalizedText = text.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        if (
+          normalizedText === 'show more' ||
+          normalizedText === 'show more...' ||
+          normalizedText === 'mostrar mas' ||
+          normalizedText === 'mostrar mas...' ||
+          normalizedText === 'ver mas' ||
+          normalizedText === 'ver mas...'
+        ) {
           link.click();
           break;
         }
