@@ -63,3 +63,6 @@ jobs:
 
       - name: Run fixtures for world olympic-games
         run: npm run fixtures -- world olympic-games
+
+      - name: Run basketball
+        run: npm run basketball
