@@ -13,7 +13,8 @@
     "fixtures": "node src/competitionFixtures.cjs",
     "standings": "node src/index.js action=standings",
     "basketball": "node src/scrapeAllBasketball.js",
-    "basketball:detailed": "node src/scrapeAllBasketball.js detailed=true"
+    "basketball:detailed": "node src/scrapeAllBasketball.js detailed=true",
+    "print-csv": "node src/printCsv.js"
   },
   "keywords": [
     "puppeteer",
