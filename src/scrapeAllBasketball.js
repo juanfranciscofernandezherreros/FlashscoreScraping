@@ -81,97 +81,104 @@ const logError = (message) => {
     logInfo(`CSV file generated: ${nombreArchivo}.csv`);
     console.log(`CSV file generated: ${nombreArchivo}.csv`);
 
-    // If --detailed flag is set, extract detailed data for each match
+    // If --detailed flag is set, extract detailed data for each match (in parallel batches)
     if (args.detailed) {
-      console.log('\nExtracting detailed data for each match...');
+      console.log('\nExtracting detailed data for each match (parallel)...');
       const detailedFolderPath = path.join(resultsFolderPath, `ALL_BASKETBALL_DETAILED_${formattedFecha}`);
       if (!fs.existsSync(detailedFolderPath)) {
         fs.mkdirSync(detailedFolderPath, { recursive: true });
       }
 
-      for (const match of results.data) {
-        if (!match.matchId) continue;
-        const matchId = match.matchId;
-        const matchFolderPath = path.join(detailedFolderPath, matchId);
-        if (!fs.existsSync(matchFolderPath)) {
-          fs.mkdirSync(matchFolderPath, { recursive: true });
-        }
+      const PARALLEL_BATCH_SIZE = 3;
+      const matchesWithId = results.data.filter(m => m.matchId);
 
-        console.log(`  Processing match: ${matchId} (${match.homeTeam} vs ${match.awayTeam})`);
+      for (let i = 0; i < matchesWithId.length; i += PARALLEL_BATCH_SIZE) {
+        const batch = matchesWithId.slice(i, i + PARALLEL_BATCH_SIZE);
+        console.log(`  Processing batch ${Math.floor(i / PARALLEL_BATCH_SIZE) + 1} (${batch.length} matches)...`);
 
-        try {
-          const matchData = await getMatchData(browser, matchId);
-          generateCSVFromObject(matchData, path.join(matchFolderPath, `MATCH_SUMMARY_${matchId}`));
-        } catch (error) {
-          logError(`Error getting match data for ${matchId}: ${error.message}`);
-        }
-
-        try {
-          const statsPlayer = await getStatsPlayer(browser, matchId);
-          if (statsPlayer && statsPlayer.length > 0) {
-            generateCSVPlayerStats(statsPlayer, path.join(matchFolderPath, `STATS_PLAYER_${matchId}`));
+        await Promise.all(batch.map(async (match) => {
+          const matchId = match.matchId;
+          const matchFolderPath = path.join(detailedFolderPath, matchId);
+          if (!fs.existsSync(matchFolderPath)) {
+            fs.mkdirSync(matchFolderPath, { recursive: true });
           }
-        } catch (error) {
-          logError(`Error getting player stats for ${matchId}: ${error.message}`);
-        }
 
-        for (let i = 0; i <= 4; i++) {
+          console.log(`  Processing match: ${matchId} (${match.homeTeam} vs ${match.awayTeam})`);
+
           try {
-            const statsMatch = await getStatsMatch(browser, matchId, i);
-            if (statsMatch) {
-              generateCSVStatsMatch(statsMatch, path.join(matchFolderPath, `STATS_MATCH_${matchId}_${i}`));
+            const matchData = await getMatchData(browser, matchId);
+            generateCSVFromObject(matchData, path.join(matchFolderPath, `MATCH_SUMMARY_${matchId}`));
+          } catch (error) {
+            logError(`Error getting match data for ${matchId}: ${error.message}`);
+          }
+
+          try {
+            const statsPlayer = await getStatsPlayer(browser, matchId);
+            if (statsPlayer && statsPlayer.length > 0) {
+              generateCSVPlayerStats(statsPlayer, path.join(matchFolderPath, `STATS_PLAYER_${matchId}`));
             }
           } catch (error) {
-            // Expected for periods that don't exist
+            logError(`Error getting player stats for ${matchId}: ${error.message}`);
           }
-        }
 
-        for (let i = 0; i <= 4; i++) {
+          for (let j = 0; j <= 4; j++) {
+            try {
+              const statsMatch = await getStatsMatch(browser, matchId, j);
+              if (statsMatch) {
+                generateCSVStatsMatch(statsMatch, path.join(matchFolderPath, `STATS_MATCH_${matchId}_${j}`));
+              }
+            } catch (error) {
+              // Expected for periods that don't exist
+            }
+          }
+
+          for (let j = 0; j <= 4; j++) {
+            try {
+              const pointByPoint = await getPointByPoint(browser, matchId, j);
+              if (pointByPoint && pointByPoint.length > 0) {
+                generateCSVPointByPoint(pointByPoint, path.join(matchFolderPath, `POINT_BY_POINT_${matchId}_${j}`), matchId);
+              }
+            } catch (error) {
+              // Expected for periods that don't exist
+            }
+          }
+
           try {
-            const pointByPoint = await getPointByPoint(browser, matchId, i);
-            if (pointByPoint && pointByPoint.length > 0) {
-              generateCSVPointByPoint(pointByPoint, path.join(matchFolderPath, `POINT_BY_POINT_${matchId}_${i}`), matchId);
+            const oddsData = await getMatchOdds(browser, matchId);
+            if (oddsData && oddsData.length > 0) {
+              generateCSVOdds(oddsData, path.join(matchFolderPath, `ODDS_${matchId}`));
             }
           } catch (error) {
-            // Expected for periods that don't exist
+            logError(`Error getting odds for ${matchId}: ${error.message}`);
           }
-        }
 
-        try {
-          const oddsData = await getMatchOdds(browser, matchId);
-          if (oddsData && oddsData.length > 0) {
-            generateCSVOdds(oddsData, path.join(matchFolderPath, `ODDS_${matchId}`));
+          try {
+            const overUnderData = await getMatchOverUnder(browser, matchId);
+            if (overUnderData && overUnderData.length > 0) {
+              generateCSVOdds(overUnderData, path.join(matchFolderPath, `OVER_UNDER_${matchId}`));
+            }
+          } catch (error) {
+            logError(`Error getting over/under for ${matchId}: ${error.message}`);
           }
-        } catch (error) {
-          logError(`Error getting odds for ${matchId}: ${error.message}`);
-        }
 
-        try {
-          const overUnderData = await getMatchOverUnder(browser, matchId);
-          if (overUnderData && overUnderData.length > 0) {
-            generateCSVOdds(overUnderData, path.join(matchFolderPath, `OVER_UNDER_${matchId}`));
+          try {
+            const h2hData = await getHeadToHead(browser, matchId);
+            if (h2hData) {
+              generateCSVHeadToHead(h2hData, path.join(matchFolderPath, `H2H_${matchId}`));
+            }
+          } catch (error) {
+            logError(`Error getting H2H for ${matchId}: ${error.message}`);
           }
-        } catch (error) {
-          logError(`Error getting over/under for ${matchId}: ${error.message}`);
-        }
 
-        try {
-          const h2hData = await getHeadToHead(browser, matchId);
-          if (h2hData) {
-            generateCSVHeadToHead(h2hData, path.join(matchFolderPath, `H2H_${matchId}`));
+          try {
+            const lineupData = await getMatchLineups(browser, matchId);
+            if (lineupData && (lineupData.home?.length || lineupData.away?.length)) {
+              generateCSVLineups(lineupData, path.join(matchFolderPath, `LINEUPS_${matchId}`));
+            }
+          } catch (error) {
+            logError(`Error getting lineups for ${matchId}: ${error.message}`);
           }
-        } catch (error) {
-          logError(`Error getting H2H for ${matchId}: ${error.message}`);
-        }
-
-        try {
-          const lineupData = await getMatchLineups(browser, matchId);
-          if (lineupData && (lineupData.home?.length || lineupData.away?.length)) {
-            generateCSVLineups(lineupData, path.join(matchFolderPath, `LINEUPS_${matchId}`));
-          }
-        } catch (error) {
-          logError(`Error getting lineups for ${matchId}: ${error.message}`);
-        }
+        }));
       }
 
       console.log('Detailed data extraction complete.');

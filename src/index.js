@@ -281,16 +281,23 @@ const generateMatchCSVs = async (browser, match, competitionFolderPath, includeO
       includeLineups: args.includeLineups
     };
 
+    // Number of matches to process concurrently
+    const PARALLEL_BATCH_SIZE = 3;
+
     if (args.ids !== null) {
       const idList = args.ids.split(',');
-      for (const matchId of idList) {
-        logInfo(`Processing match by ID: ${matchId}`);
-        try {
-          const match = { matchId: `${matchId}` }; // Modify as needed to match your match object structure
-          await generateMatchCSVs(browser, match, competitionFolderPath, includeOptions);
-        } catch (error) {
-          logError(matchId, args, `Error processing match ${matchId}: ${error.message}`);
-        }
+      for (let i = 0; i < idList.length; i += PARALLEL_BATCH_SIZE) {
+        const batch = idList.slice(i, i + PARALLEL_BATCH_SIZE);
+        logInfo(`Processing batch of ${batch.length} matches by ID (${i + 1}-${i + batch.length} of ${idList.length})...`);
+        await Promise.all(batch.map(async (matchId) => {
+          logInfo(`Processing match by ID: ${matchId}`);
+          try {
+            const match = { matchId: `${matchId}` };
+            await generateMatchCSVs(browser, match, competitionFolderPath, includeOptions);
+          } catch (error) {
+            logError(matchId, args, `Error processing match ${matchId}: ${error.message}`);
+          }
+        }));
       }
     } else if (args.action === "results") {
       logInfo("Generating CSV file...");
@@ -302,14 +309,19 @@ const generateMatchCSVs = async (browser, match, competitionFolderPath, includeO
       const nombreArchivo = path.join(competitionFolderPath, `RESULTS_${formattedFecha}_${args.country}_${args.league}.csv`);
       generateCSVDataResults(allMatchIdLists.eventDataList, nombreArchivo.replace('.csv', ''));
       logInfo("Results CSV file generated.");
-      for (const match of allMatchIdLists.eventDataList) {
-        const matchId = match.matchId.replace('g_3_', '');
-        logInfo(`Processing match: ${match.matchId} URL: https://example.com/match/${matchId}`);
-        try {
-          await generateMatchCSVs(browser, match, competitionFolderPath, includeOptions);
-        } catch (error) {
-          logError(matchId, args, `Error processing match ${match.matchId} URL: https://example.com/match/${matchId}: ${error.message}`);
-        }
+      const matchList = allMatchIdLists.eventDataList;
+      for (let i = 0; i < matchList.length; i += PARALLEL_BATCH_SIZE) {
+        const batch = matchList.slice(i, i + PARALLEL_BATCH_SIZE);
+        logInfo(`Processing batch of ${batch.length} matches (${i + 1}-${i + batch.length} of ${matchList.length})...`);
+        await Promise.all(batch.map(async (match) => {
+          const matchId = match.matchId.replace('g_3_', '');
+          logInfo(`Processing match: ${match.matchId} URL: https://example.com/match/${matchId}`);
+          try {
+            await generateMatchCSVs(browser, match, competitionFolderPath, includeOptions);
+          } catch (error) {
+            logError(matchId, args, `Error processing match ${match.matchId} URL: https://example.com/match/${matchId}: ${error.message}`);
+          }
+        }));
       }
     } else if (args.action === "fixtures") {
       const allFixtures = await getFixtures(browser, args.country, args.league);

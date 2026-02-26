@@ -7,7 +7,7 @@ on:
       - master
 
 jobs:
-  scrape:
+  basketball:
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -42,12 +42,93 @@ jobs:
             libasound2t64 \
             libpango-1.0-0 \
             libpangocairo-1.0-0
-            
+
       - name: Run basketball
         run: npm run basketball
-        
+
+      - name: Print CSV output
+        run: npm run print-csv
+
+  results:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Install Chromium dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libnss3 \
+            libatk1.0-0 \
+            libatk-bridge2.0-0 \
+            libcups2 \
+            libdrm2 \
+            libxkbcommon0 \
+            libxcomposite1 \
+            libxdamage1 \
+            libxfixes3 \
+            libxrandr2 \
+            libgbm1 \
+            libasound2t64 \
+            libpango-1.0-0 \
+            libpangocairo-1.0-0
+
       - name: Run results
         run: npm run results -- spain acb
 
+      - name: Print CSV output
+        run: npm run print-csv
+
+  fixtures:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Install Chromium dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libnss3 \
+            libatk1.0-0 \
+            libatk-bridge2.0-0 \
+            libcups2 \
+            libdrm2 \
+            libxkbcommon0 \
+            libxcomposite1 \
+            libxdamage1 \
+            libxfixes3 \
+            libxrandr2 \
+            libgbm1 \
+            libasound2t64 \
+            libpango-1.0-0 \
+            libpangocairo-1.0-0
+
       - name: Run fixtures
         run: npm run fixtures -- spain acb
+
+      - name: Print CSV output
+        run: npm run print-csv
