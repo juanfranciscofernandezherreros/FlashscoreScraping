@@ -11,8 +11,13 @@ const mockBasketballData = [
   {
     country: 'USA',
     league: 'NBA',
+    competition: 'NBA',
+    round: 'Regular Season',
     matchId: 'abc123',
     eventTime: '20:00',
+    state: 'Final',
+    matchStatus: 'Final',
+    result: '110-105',
     homeTeam: 'Los Angeles Lakers',
     awayTeam: 'Boston Celtics',
     homeScore: '110',
@@ -31,8 +36,13 @@ const mockBasketballData = [
   {
     country: 'SPAIN',
     league: 'ACB',
+    competition: 'ACB',
+    round: 'Round 12',
     matchId: 'def456',
     eventTime: '21:30',
+    state: 'Final',
+    matchStatus: 'Final',
+    result: '88-82',
     homeTeam: 'Real Madrid',
     awayTeam: 'FC Barcelona',
     homeScore: '88',
@@ -51,8 +61,13 @@ const mockBasketballData = [
   {
     country: 'EUROPE',
     league: 'Euroleague',
+    competition: 'Euroleague',
+    round: 'Playoffs',
     matchId: 'ghi789',
     eventTime: '19:00',
+    state: 'Final OT',
+    matchStatus: 'Final OT',
+    result: '95-93',
     homeTeam: 'Olympiacos',
     awayTeam: 'Panathinaikos',
     homeScore: '95',
@@ -110,7 +125,7 @@ async function testGenerateCSVDataResults() {
   const lines = content.trim().split('\n');
 
   // Check header row
-  const expectedHeaders = 'country,league,matchId,eventTime,homeTeam,awayTeam,homeScore,awayScore,homeScore1,homeScore2,homeScore3,homeScore4,homeScore5,awayScore1,awayScore2,awayScore3,awayScore4,awayScore5';
+  const expectedHeaders = 'country,league,competition,round,matchId,eventTime,state,matchStatus,result,homeTeam,awayTeam,homeScore,awayScore,homeScore1,homeScore2,homeScore3,homeScore4,homeScore5,awayScore1,awayScore2,awayScore3,awayScore4,awayScore5';
   assert(lines[0] === expectedHeaders, 'CSV header row matches expected columns');
 
   // Check number of data rows (3 matches)
@@ -124,21 +139,24 @@ async function testGenerateCSVDataResults() {
   // Check first match data by column index
   assert(row1[0] === 'USA', 'First row column 0 is country USA');
   assert(row1[1] === 'NBA', 'First row column 1 is league NBA');
-  assert(row1[4] === 'Los Angeles Lakers', 'First row column 4 is home team');
-  assert(row1[5] === 'Boston Celtics', 'First row column 5 is away team');
-  assert(row1[6] === '110', 'First row column 6 is home score 110');
-  assert(row1[7] === '105', 'First row column 7 is away score 105');
+  assert(row1[2] === 'NBA', 'First row column 2 is competition NBA');
+  assert(row1[6] === 'Final', 'First row column 6 is state Final');
+  assert(row1[8] === '110-105', 'First row column 8 is result 110-105');
+  assert(row1[9] === 'Los Angeles Lakers', 'First row column 9 is home team');
+  assert(row1[10] === 'Boston Celtics', 'First row column 10 is away team');
+  assert(row1[11] === '110', 'First row column 11 is home score 110');
+  assert(row1[12] === '105', 'First row column 12 is away score 105');
 
   // Check second match by column index
   assert(row2[0] === 'SPAIN', 'Second row column 0 is country SPAIN');
-  assert(row2[4] === 'Real Madrid', 'Second row column 4 is Real Madrid');
-  assert(row2[5] === 'FC Barcelona', 'Second row column 5 is FC Barcelona');
+  assert(row2[9] === 'Real Madrid', 'Second row column 9 is Real Madrid');
+  assert(row2[10] === 'FC Barcelona', 'Second row column 10 is FC Barcelona');
 
   // Check third match (overtime game) by column index
   assert(row3[1] === 'Euroleague', 'Third row column 1 is Euroleague');
-  assert(row3[4] === 'Olympiacos', 'Third row column 4 is Olympiacos');
-  assert(row3[12] === '10', 'Third row column 12 (homeScore5) is OT score 10');
-  assert(row3[17] === '8', 'Third row column 17 (awayScore5) is OT score 8');
+  assert(row3[9] === 'Olympiacos', 'Third row column 9 is Olympiacos');
+  assert(row3[17] === '10', 'Third row column 17 (homeScore5) is OT score 10');
+  assert(row3[22] === '8', 'Third row column 22 (awayScore5) is OT score 8');
 
   console.log(`\n  CSV content preview:\n${lines.slice(0, 4).map(l => '    ' + l).join('\n')}`);
 }

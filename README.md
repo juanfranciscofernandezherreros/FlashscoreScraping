@@ -56,3 +56,8 @@ npm run results -- spain acb-2005-2006
 
 npm run fixtures -- world olympic-games
 
+npm run basketball
+
+# Optional: include per-match detailed CSV exports (summary, stats, odds, h2h, lineups)
+npm run basketball:detailed
+
