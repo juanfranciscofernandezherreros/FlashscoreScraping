@@ -4,6 +4,7 @@ import { generateCSVDataResults } from './csvGenerator.js';
 import { formatFecha } from './fecha.js';
 
 const TEST_OUTPUT_DIR = path.join(process.cwd(), 'src', 'csv', 'test_results');
+const FILE_WRITE_DELAY_MS = 500;
 
 // Sample data matching the structure returned by getAllBasketballResults
 const mockBasketballData = [
@@ -100,7 +101,7 @@ async function testGenerateCSVDataResults() {
   generateCSVDataResults(mockBasketballData, filePath);
 
   // generateCSVDataResults uses fs.writeFile (async callback), wait for it
-  await new Promise(resolve => setTimeout(resolve, 500));
+  await new Promise(resolve => setTimeout(resolve, FILE_WRITE_DELAY_MS));
 
   const csvPath = `${filePath}.csv`;
   assert(fs.existsSync(csvPath), 'CSV file was created');
@@ -115,24 +116,29 @@ async function testGenerateCSVDataResults() {
   // Check number of data rows (3 matches)
   assert(lines.length === 4, `CSV has header + 3 data rows (got ${lines.length} lines)`);
 
-  // Check first match data
-  assert(lines[1].includes('USA'), 'First row contains country USA');
-  assert(lines[1].includes('NBA'), 'First row contains league NBA');
-  assert(lines[1].includes('Los Angeles Lakers'), 'First row contains home team');
-  assert(lines[1].includes('Boston Celtics'), 'First row contains away team');
-  assert(lines[1].includes('110'), 'First row contains home score');
-  assert(lines[1].includes('105'), 'First row contains away score');
+  // Parse CSV rows into columns for precise validation
+  const row1 = lines[1].split(',');
+  const row2 = lines[2].split(',');
+  const row3 = lines[3].split(',');
 
-  // Check second match
-  assert(lines[2].includes('SPAIN'), 'Second row contains country SPAIN');
-  assert(lines[2].includes('Real Madrid'), 'Second row contains Real Madrid');
-  assert(lines[2].includes('FC Barcelona'), 'Second row contains FC Barcelona');
+  // Check first match data by column index
+  assert(row1[0] === 'USA', 'First row column 0 is country USA');
+  assert(row1[1] === 'NBA', 'First row column 1 is league NBA');
+  assert(row1[4] === 'Los Angeles Lakers', 'First row column 4 is home team');
+  assert(row1[5] === 'Boston Celtics', 'First row column 5 is away team');
+  assert(row1[6] === '110', 'First row column 6 is home score 110');
+  assert(row1[7] === '105', 'First row column 7 is away score 105');
 
-  // Check third match (overtime game)
-  assert(lines[3].includes('Euroleague'), 'Third row contains Euroleague');
-  assert(lines[3].includes('Olympiacos'), 'Third row contains Olympiacos');
-  assert(lines[3].includes('10'), 'Third row contains OT home score');
-  assert(lines[3].includes('8'), 'Third row contains OT away score');
+  // Check second match by column index
+  assert(row2[0] === 'SPAIN', 'Second row column 0 is country SPAIN');
+  assert(row2[4] === 'Real Madrid', 'Second row column 4 is Real Madrid');
+  assert(row2[5] === 'FC Barcelona', 'Second row column 5 is FC Barcelona');
+
+  // Check third match (overtime game) by column index
+  assert(row3[1] === 'Euroleague', 'Third row column 1 is Euroleague');
+  assert(row3[4] === 'Olympiacos', 'Third row column 4 is Olympiacos');
+  assert(row3[12] === '10', 'Third row column 12 (homeScore5) is OT score 10');
+  assert(row3[17] === '8', 'Third row column 17 (awayScore5) is OT score 8');
 
   console.log(`\n  CSV content preview:\n${lines.slice(0, 4).map(l => '    ' + l).join('\n')}`);
 }
@@ -143,7 +149,7 @@ async function testEmptyData() {
   const filePath = path.join(TEST_OUTPUT_DIR, 'TEST_EMPTY');
   generateCSVDataResults([], filePath);
   
-  await new Promise(resolve => setTimeout(resolve, 500));
+  await new Promise(resolve => setTimeout(resolve, FILE_WRITE_DELAY_MS));
   
   const csvPath = `${filePath}.csv`;
   assert(!fs.existsSync(csvPath), 'CSV file is NOT created for empty data');
@@ -155,7 +161,7 @@ async function testNullData() {
   const filePath = path.join(TEST_OUTPUT_DIR, 'TEST_NULL');
   generateCSVDataResults(null, filePath);
   
-  await new Promise(resolve => setTimeout(resolve, 500));
+  await new Promise(resolve => setTimeout(resolve, FILE_WRITE_DELAY_MS));
   
   const csvPath = `${filePath}.csv`;
   assert(!fs.existsSync(csvPath), 'CSV file is NOT created for null data');
@@ -178,7 +184,7 @@ async function testCsvFilePathWithTimestamp() {
   
   generateCSVDataResults(mockBasketballData, nombreArchivo);
   
-  await new Promise(resolve => setTimeout(resolve, 500));
+  await new Promise(resolve => setTimeout(resolve, FILE_WRITE_DELAY_MS));
   
   const csvPath = `${nombreArchivo}.csv`;
   assert(fs.existsSync(csvPath), `Timestamped CSV file was created: ${path.basename(csvPath)}`);
