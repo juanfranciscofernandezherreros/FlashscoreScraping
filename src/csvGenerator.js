@@ -176,6 +176,26 @@ export function generateCSVStandings(data, fileName) {
   });
 }
 
+export function generateCSVCountriesAndLeagues(data, fileName) {
+  if (!data || data.length === 0) {
+    console.log("No countries/leagues data to generate CSV file.");
+    return;
+  }
+
+  const headers = Object.keys(data[0]);
+  const headerRow = headers.join(",") + "\n";
+  const csvContent = data.map(obj =>
+    headers.map(key => `"${String(obj[key] || '').replace(/"/g, '""')}"`).join(",")
+  ).join("\n");
+
+  const csvData = headerRow + csvContent;
+  fs.writeFile(`${fileName}.csv`, csvData, (err) => {
+    if (err) throw err;
+    console.log(`Countries & Leagues CSV exported to ${fileName}.csv`);
+    console.log(`📊 The CSV file contains ${data.length} ${data.length === 1 ? 'record' : 'records'} with ${headers.length} ${headers.length === 1 ? 'column' : 'columns'}.`);
+  });
+}
+
 export function generateCSVLineups(data, fileName) {
   if (!data || (!data.home?.length && !data.away?.length)) {
     console.log("No lineup data to generate CSV file.");

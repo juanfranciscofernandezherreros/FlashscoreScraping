@@ -541,6 +541,53 @@ export const getStandings = async (browser, country, league) => {
   return standingsData;
 };
 
+export const getCountriesAndLeagues = async (browser) => {
+  const page = await browser.newPage();
+  const url = `${BASKETBALL_URL}/`;
+  await page.goto(url, { waitUntil: 'networkidle2', timeout: 60000 });
+  await new Promise(resolve => setTimeout(resolve, 2000));
+
+  const data = await page.evaluate(() => {
+    const results = [];
+    const menuItems = document.querySelectorAll('.lmc__block');
+
+    menuItems.forEach((block) => {
+      const countryEl = block.querySelector('.lmc__blockName');
+      const countryName = countryEl ? countryEl.textContent.trim() : '';
+      const countryHref = countryEl ? (countryEl.closest('a')?.getAttribute('href') || countryEl.querySelector('a')?.getAttribute('href') || '') : '';
+
+      const leagueElements = block.querySelectorAll('.lmc__item a, .lmc__element a');
+      leagueElements.forEach((leagueEl) => {
+        const leagueName = leagueEl.textContent.trim();
+        const leagueHref = leagueEl.getAttribute('href') || '';
+        if (leagueName) {
+          results.push({
+            country: countryName,
+            countryHref,
+            league: leagueName,
+            leagueHref,
+          });
+        }
+      });
+
+      // If no league sub-items found, still record the country
+      if (leagueElements.length === 0 && countryName) {
+        results.push({
+          country: countryName,
+          countryHref,
+          league: '',
+          leagueHref: '',
+        });
+      }
+    });
+
+    return results;
+  });
+
+  await page.close();
+  return data;
+};
+
 export const getMatchLineups = async (browser, matchId) => {
   const page = await browser.newPage();
   const url = `${BASE_URL}/match/${matchId}/#/match-summary/lineups`;
