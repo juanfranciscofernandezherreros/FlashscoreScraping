@@ -567,6 +567,7 @@ export const getCountriesAndLeagues = async (browser) => {
     }
   } catch (error) {
     // If clicking "Show more" fails, continue with whatever is visible
+    console.warn('Failed to click Show more:', error.message);
   }
 
   const data = await page.evaluate(() => {
