@@ -547,6 +547,29 @@ export const getCountriesAndLeagues = async (browser) => {
   await page.goto(url, { waitUntil: 'networkidle2', timeout: 60000 });
   await new Promise(resolve => setTimeout(resolve, 2000));
 
+  // Click "Show more" in the left menu to reveal all countries
+  try {
+    const showMoreClicked = await page.evaluate(() => {
+      const leftMenu = document.getElementById('category-left-menu');
+      if (!leftMenu) return false;
+      const links = leftMenu.querySelectorAll('a');
+      for (const link of links) {
+        const text = link.textContent.trim().toLowerCase();
+        if (text === 'show more' || text === 'show more...') {
+          link.click();
+          return true;
+        }
+      }
+      return false;
+    });
+    if (showMoreClicked) {
+      await new Promise(resolve => setTimeout(resolve, 1500));
+    }
+  } catch (error) {
+    // If clicking "Show more" fails, continue with whatever is visible
+    console.warn('Failed to click Show more:', error.message);
+  }
+
   const data = await page.evaluate(() => {
     const results = [];
 
