@@ -297,8 +297,8 @@ async function extractFromPage(page) {
     await page.close();
   }
 
-  // Test 7: "Show more" link reveals hidden country elements
-  console.log('\n--- Test: Show more link reveals hidden countries ---');
+  // Test 7: "Show more"/"Click here" link reveals hidden country elements
+  console.log('\n--- Test: Show more or Click here link reveals hidden countries ---');
   {
     const page = await browser.newPage();
     await page.setContent(`
@@ -328,7 +328,7 @@ async function extractFromPage(page) {
               <a href="/basketball/argentina/lnb/">LNB</a>
             </div>
           </div>
-          <a href="#" id="show-more-link">Mostrar más</a>
+          <a href="#" id="show-more-link">Click here to show more</a>
         </div>
       </div>
       <script>
@@ -351,12 +351,11 @@ async function extractFromPage(page) {
         const text = link.textContent.trim().toLowerCase();
         const normalizedText = text.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
         if (
-          normalizedText === 'show more' ||
-          normalizedText === 'show more...' ||
-          normalizedText === 'mostrar mas' ||
-          normalizedText === 'mostrar mas...' ||
-          normalizedText === 'ver mas' ||
-          normalizedText === 'ver mas...'
+          normalizedText.includes('show more') ||
+          normalizedText.includes('mostrar mas') ||
+          normalizedText.includes('ver mas') ||
+          normalizedText.includes('click here') ||
+          normalizedText.includes('haz clic aqui')
         ) {
           link.click();
           break;
