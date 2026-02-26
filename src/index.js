@@ -7,7 +7,11 @@ import {
   generateCSVPlayerStats, 
   generateCSVStatsMatch, 
   generateCSVData,
-  generateCSVPointByPoint
+  generateCSVPointByPoint,
+  generateCSVOdds,
+  generateCSVHeadToHead,
+  generateCSVStandings,
+  generateCSVLineups
 } from "./csvGenerator.js";
 import { formatFecha } from "./fecha.js";
 import {
@@ -16,7 +20,12 @@ import {
   getStatsMatch,
   getMatchData,
   getStatsPlayer,
-  getPointByPoint
+  getPointByPoint,
+  getMatchOdds,
+  getMatchOverUnder,
+  getHeadToHead,
+  getStandings,
+  getMatchLineups
 } from "./utils/index.js";
 import { BASE_URL } from "./constants/index.js";
 
@@ -119,6 +128,64 @@ const generateMatchCSVs = async (browser, match, competitionFolderPath, includeO
       }
     }
   }
+
+  if (includeOptions.includeOdds) {
+    const matchFilePath = path.join(matchFolderPath, `ODDS_${match.matchId}.csv`);
+    if (!fs.existsSync(matchFilePath)) {
+      try {
+        const oddsData = await getMatchOdds(browser, matchId);
+        generateCSVOdds(oddsData, matchFilePath.replace('.csv', ''));
+        logInfo(`CSV file created at ${matchFilePath} for URL: ${matchUrl}`);
+      } catch (error) {
+        logWarning(`Could not extract odds for ${match.matchId}: ${error.message}`);
+      }
+    } else {
+      logWarning(`CSV file already exists at ${matchFilePath}, skipping generation. URL: ${matchUrl}`);
+    }
+
+    const overUnderFilePath = path.join(matchFolderPath, `OVER_UNDER_${match.matchId}.csv`);
+    if (!fs.existsSync(overUnderFilePath)) {
+      try {
+        const overUnderData = await getMatchOverUnder(browser, matchId);
+        generateCSVOdds(overUnderData, overUnderFilePath.replace('.csv', ''));
+        logInfo(`CSV file created at ${overUnderFilePath} for URL: ${matchUrl}`);
+      } catch (error) {
+        logWarning(`Could not extract over/under for ${match.matchId}: ${error.message}`);
+      }
+    } else {
+      logWarning(`CSV file already exists at ${overUnderFilePath}, skipping generation. URL: ${matchUrl}`);
+    }
+  }
+
+  if (includeOptions.includeH2H) {
+    const matchFilePath = path.join(matchFolderPath, `H2H_${match.matchId}.csv`);
+    if (!fs.existsSync(matchFilePath)) {
+      try {
+        const h2hData = await getHeadToHead(browser, matchId);
+        generateCSVHeadToHead(h2hData, matchFilePath.replace('.csv', ''));
+        logInfo(`CSV file created at ${matchFilePath} for URL: ${matchUrl}`);
+      } catch (error) {
+        logWarning(`Could not extract H2H for ${match.matchId}: ${error.message}`);
+      }
+    } else {
+      logWarning(`CSV file already exists at ${matchFilePath}, skipping generation. URL: ${matchUrl}`);
+    }
+  }
+
+  if (includeOptions.includeLineups) {
+    const matchFilePath = path.join(matchFolderPath, `LINEUPS_${match.matchId}.csv`);
+    if (!fs.existsSync(matchFilePath)) {
+      try {
+        const lineupData = await getMatchLineups(browser, matchId);
+        generateCSVLineups(lineupData, matchFilePath.replace('.csv', ''));
+        logInfo(`CSV file created at ${matchFilePath} for URL: ${matchUrl}`);
+      } catch (error) {
+        logWarning(`Could not extract lineups for ${match.matchId}: ${error.message}`);
+      }
+    } else {
+      logWarning(`CSV file already exists at ${matchFilePath}, skipping generation. URL: ${matchUrl}`);
+    }
+  }
 };
 
 (async () => {
@@ -132,6 +199,11 @@ const generateMatchCSVs = async (browser, match, competitionFolderPath, includeO
     includeStatsPlayer: false,
     includeStatsMatch: false,
     includePointByPoint: false,
+    includeOdds: false,
+    includeH2H: false,
+    includeStandings: false,
+    includeLineups: false,
+    includeAll: false,
   };
 
   // Get command line arguments and extract values
@@ -145,7 +217,24 @@ const generateMatchCSVs = async (browser, match, competitionFolderPath, includeO
     if (arg === "includeStatsPlayer=true") args.includeStatsPlayer = true;
     if (arg === "includeStatsMatch=true") args.includeStatsMatch = true;
     if (arg === "includePointByPoint=true") args.includePointByPoint = true;
+    if (arg === "includeOdds=true") args.includeOdds = true;
+    if (arg === "includeH2H=true") args.includeH2H = true;
+    if (arg === "includeStandings=true") args.includeStandings = true;
+    if (arg === "includeLineups=true") args.includeLineups = true;
+    if (arg === "includeAll=true") args.includeAll = true;
   });
+
+  // If includeAll is set, enable all data extraction options
+  if (args.includeAll) {
+    args.includeMatchData = true;
+    args.includeStatsPlayer = true;
+    args.includeStatsMatch = true;
+    args.includePointByPoint = true;
+    args.includeOdds = true;
+    args.includeH2H = true;
+    args.includeLineups = true;
+    args.includeStandings = true;
+  }
 
   // Log all values to verify they are being captured correctly
   logInfo(`Country: ${args.country}`);
@@ -157,6 +246,11 @@ const generateMatchCSVs = async (browser, match, competitionFolderPath, includeO
   logInfo(`Include Stats Player: ${args.includeStatsPlayer}`);
   logInfo(`Include Stats Match: ${args.includeStatsMatch}`);
   logInfo(`Include Point By Point: ${args.includePointByPoint}`);
+  logInfo(`Include Odds: ${args.includeOdds}`);
+  logInfo(`Include H2H: ${args.includeH2H}`);
+  logInfo(`Include Standings: ${args.includeStandings}`);
+  logInfo(`Include Lineups: ${args.includeLineups}`);
+  logInfo(`Include All: ${args.includeAll}`);
 
   // Base folder path is always './src/csv'
   const baseFolderPath = path.join(process.cwd(), 'src', 'csv');
@@ -181,7 +275,10 @@ const generateMatchCSVs = async (browser, match, competitionFolderPath, includeO
       includeMatchData: args.includeMatchData, 
       includeStatsPlayer: args.includeStatsPlayer, 
       includeStatsMatch: args.includeStatsMatch, 
-      includePointByPoint: args.includePointByPoint 
+      includePointByPoint: args.includePointByPoint,
+      includeOdds: args.includeOdds,
+      includeH2H: args.includeH2H,
+      includeLineups: args.includeLineups
     };
 
     if (args.ids !== null) {
@@ -219,6 +316,25 @@ const generateMatchCSVs = async (browser, match, competitionFolderPath, includeO
       const matchFilePath = path.join(fixturesFolderPath, `FIXTURES_${args.country}_${args.league}.csv`);
       generateCSVData(allFixtures, matchFilePath.replace('.csv', ''));
       logInfo("Fixtures CSV file generated.");
+    } else if (args.action === "standings") {
+      const standingsData = await getStandings(browser, args.country, args.league);
+      const standingsFilePath = path.join(competitionFolderPath, `STANDINGS_${args.country}_${args.league}.csv`);
+      generateCSVStandings(standingsData, standingsFilePath.replace('.csv', ''));
+      logInfo("Standings CSV file generated.");
+    }
+
+    // Extract standings if included (for results or ids actions)
+    if (args.includeStandings && args.country && args.league && args.action !== "standings") {
+      try {
+        const standingsData = await getStandings(browser, args.country, args.league);
+        const standingsFilePath = path.join(competitionFolderPath, `STANDINGS_${args.country}_${args.league}.csv`);
+        if (!fs.existsSync(`${standingsFilePath.replace('.csv', '')}.csv`)) {
+          generateCSVStandings(standingsData, standingsFilePath.replace('.csv', ''));
+          logInfo("Standings CSV file generated.");
+        }
+      } catch (error) {
+        logWarning(`Could not extract standings: ${error.message}`);
+      }
     }
   } catch (error) {
     logError('N/A', args, `Error processing the action: ${error.message}`);

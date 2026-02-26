@@ -12,7 +12,10 @@ try {
     console.log(`Total matches found: ${results.data.length}`);
     results.data.forEach((match) => {
       console.log(
-        `[${match.country} - ${match.league}] ${match.eventTime} | ${match.homeTeam} ${match.homeScore} - ${match.awayScore} ${match.awayTeam}`
+        `[${match.country} - ${match.league}]` +
+        (match.round ? ` (${match.round})` : '') +
+        ` ${match.eventTime} | ${match.homeTeam} ${match.homeScore} - ${match.awayScore} ${match.awayTeam}` +
+        (match.matchStatus ? ` [${match.matchStatus}]` : '')
       );
     });
     console.log('Puppeteer script executed successfully.');

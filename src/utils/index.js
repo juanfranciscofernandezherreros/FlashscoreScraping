@@ -16,7 +16,7 @@ export const getMatchIdList = async (browser, country, league) => {
 
   const eventDataList = await extractEventData(page);
   await page.close();
-  return { eventDataList};
+  return { eventDataList };
 };
 
 async function autoScroll(page) {
@@ -152,6 +152,29 @@ export const getMatchData = async (browser, matchId) => {
       home: Array.from(document.querySelectorAll(".detailScore__wrapper span:not(.detailScore__divider)"))?.[0]?.outerText,
       away: Array.from(document.querySelectorAll(".detailScore__wrapper span:not(.detailScore__divider)"))?.[1]?.outerText,
     },
+    status: document.querySelector(".fixedHeaderDuel__detailStatus")?.textContent?.trim() || '',
+    venue: document.querySelector(".mi__data")?.textContent?.trim() || '',
+    referee: (() => {
+      const infoRows = document.querySelectorAll(".mi__item");
+      for (const row of infoRows) {
+        const label = row.querySelector(".mi__item__name");
+        if (label && label.textContent.trim().toLowerCase().includes('referee')) {
+          return row.querySelector(".mi__item__val")?.textContent?.trim() || '';
+        }
+      }
+      return '';
+    })(),
+    attendance: (() => {
+      const infoRows = document.querySelectorAll(".mi__item");
+      for (const row of infoRows) {
+        const label = row.querySelector(".mi__item__name");
+        if (label && label.textContent.trim().toLowerCase().includes('attendance')) {
+          return row.querySelector(".mi__item__val")?.textContent?.trim() || '';
+        }
+      }
+      return '';
+    })(),
+    round: document.querySelector(".tournamentHeader__country")?.textContent?.trim()?.split(' - ').pop()?.trim() || '',
     totalLocal: Array.from(document.querySelectorAll(".smh__home.smh__part"))?.[0]?.outerText,
     firstLocal: Array.from(document.querySelectorAll(".smh__home.smh__part"))?.[1]?.outerText,
     secondLocal: Array.from(document.querySelectorAll(".smh__home.smh__part"))?.[2]?.outerText,
@@ -311,10 +334,11 @@ export const getAllBasketballResults = async (browser) => {
     const data = [];
     let currentCountry = '';
     let currentLeague = '';
+    let currentRound = '';
 
     const sportName = document.querySelector('.heading__title')?.textContent.trim() || 'Basketball';
 
-    const elements = document.querySelectorAll('.event__header, .event__match');
+    const elements = document.querySelectorAll('.event__header, .event__round, .event__match');
 
     elements.forEach((el) => {
       if (el.classList.contains('event__header')) {
@@ -322,6 +346,9 @@ export const getAllBasketballResults = async (browser) => {
         const leagueEl = el.querySelector('.event__title--name');
         currentCountry = countryEl ? countryEl.textContent.trim() : '';
         currentLeague = leagueEl ? leagueEl.textContent.trim() : '';
+        currentRound = '';
+      } else if (el.classList.contains('event__round')) {
+        currentRound = el.textContent.trim();
       } else if (el.classList.contains('event__match')) {
         const matchId = el.id ? el.id.replace('g_1_', '') : '';
         const eventTime = el.querySelector('.event__time')?.textContent.trim() || '';
@@ -329,6 +356,7 @@ export const getAllBasketballResults = async (browser) => {
         const awayTeam = el.querySelector('.event__participant--away')?.textContent.trim() || '';
         const homeScore = el.querySelector('.event__score--home')?.textContent.trim() || '';
         const awayScore = el.querySelector('.event__score--away')?.textContent.trim() || '';
+        const matchStatus = el.querySelector('.event__stage--block')?.textContent.trim() || '';
 
         const homeScoreParts = [];
         const awayScoreParts = [];
@@ -342,8 +370,10 @@ export const getAllBasketballResults = async (browser) => {
         data.push({
           country: currentCountry,
           league: currentLeague,
+          round: currentRound,
           matchId,
           eventTime,
+          matchStatus,
           homeTeam,
           awayTeam,
           homeScore,
@@ -367,6 +397,191 @@ export const getAllBasketballResults = async (browser) => {
 
   await page.close();
   return results;
+};
+
+export const getMatchOdds = async (browser, matchId) => {
+  const page = await browser.newPage();
+  const url = `${BASE_URL}/match/${matchId}/#/odds-comparison/1x2-odds/full-time`;
+  await page.goto(url, { waitUntil: 'networkidle2', timeout: 30000 });
+  await new Promise(resolve => setTimeout(resolve, 2000));
+
+  const oddsData = await page.evaluate(() => {
+    const rows = document.querySelectorAll('.ui-table__row');
+    const odds = [];
+
+    rows.forEach((row) => {
+      const bookmaker = row.querySelector('.oddsCell__bookmaker')?.textContent?.trim() ||
+                        row.querySelector('.prematchOdds__bookmaker')?.textContent?.trim() || '';
+      const cells = row.querySelectorAll('.oddsCell__odd, .prematchOdds__odd');
+      const oddsValues = Array.from(cells).map(c => c.textContent.trim());
+
+      if (bookmaker || oddsValues.length > 0) {
+        odds.push({
+          bookmaker,
+          odd1: oddsValues[0] || '',
+          oddX: oddsValues[1] || '',
+          odd2: oddsValues[2] || '',
+        });
+      }
+    });
+
+    return odds;
+  });
+
+  await page.close();
+  return oddsData;
+};
+
+export const getMatchOverUnder = async (browser, matchId) => {
+  const page = await browser.newPage();
+  const url = `${BASE_URL}/match/${matchId}/#/odds-comparison/over-under/full-time`;
+  await page.goto(url, { waitUntil: 'networkidle2', timeout: 30000 });
+  await new Promise(resolve => setTimeout(resolve, 2000));
+
+  const overUnderData = await page.evaluate(() => {
+    const rows = document.querySelectorAll('.ui-table__row');
+    const data = [];
+
+    rows.forEach((row) => {
+      const bookmaker = row.querySelector('.oddsCell__bookmaker')?.textContent?.trim() ||
+                        row.querySelector('.prematchOdds__bookmaker')?.textContent?.trim() || '';
+      const cells = row.querySelectorAll('.oddsCell__odd, .prematchOdds__odd');
+      const oddsValues = Array.from(cells).map(c => c.textContent.trim());
+
+      if (bookmaker || oddsValues.length > 0) {
+        data.push({
+          bookmaker,
+          over: oddsValues[0] || '',
+          under: oddsValues[1] || '',
+        });
+      }
+    });
+
+    return data;
+  });
+
+  await page.close();
+  return overUnderData;
+};
+
+export const getHeadToHead = async (browser, matchId) => {
+  const page = await browser.newPage();
+  const url = `${BASE_URL}/match/${matchId}/#/h2h/overall`;
+  await page.goto(url, { waitUntil: 'networkidle2', timeout: 30000 });
+  await new Promise(resolve => setTimeout(resolve, 2000));
+
+  const h2hData = await page.evaluate(() => {
+    const sections = document.querySelectorAll('.h2h__section');
+    const result = { homeLastMatches: [], awayLastMatches: [], directMatches: [] };
+
+    sections.forEach((section, sectionIndex) => {
+      const rows = section.querySelectorAll('.h2h__row');
+      rows.forEach((row) => {
+        const date = row.querySelector('.h2h__date')?.textContent?.trim() || '';
+        const event = row.querySelector('.h2h__event')?.textContent?.trim() || '';
+        const homeTeam = row.querySelector('.h2h__homeParticipant')?.textContent?.trim() || '';
+        const awayTeam = row.querySelector('.h2h__awayParticipant')?.textContent?.trim() || '';
+        const result_text = row.querySelector('.h2h__result')?.textContent?.trim() || '';
+
+        const matchData = { date, event, homeTeam, awayTeam, result: result_text };
+
+        if (sectionIndex === 0) {
+          result.homeLastMatches.push(matchData);
+        } else if (sectionIndex === 1) {
+          result.awayLastMatches.push(matchData);
+        } else if (sectionIndex === 2) {
+          result.directMatches.push(matchData);
+        }
+      });
+    });
+
+    return result;
+  });
+
+  await page.close();
+  return h2hData;
+};
+
+export const getStandings = async (browser, country, league) => {
+  const page = await browser.newPage();
+  const url = `${BASKETBALL_URL}/${country}/${league}/standings/`;
+  await page.goto(url, { waitUntil: 'networkidle2', timeout: 30000 });
+  await new Promise(resolve => setTimeout(resolve, 2000));
+
+  const standingsData = await page.evaluate(() => {
+    const headerCells = document.querySelectorAll('.ui-table__header .table__headerCell');
+    const headers = Array.from(headerCells).map(h => h.textContent.trim()).filter(h => h);
+
+    const rows = document.querySelectorAll('.ui-table__body .ui-table__row');
+    const standings = [];
+
+    rows.forEach((row) => {
+      const rank = row.querySelector('.tableCellRank')?.textContent?.trim() || '';
+      const teamName = row.querySelector('.tableCellParticipant__name')?.textContent?.trim() || '';
+
+      const cells = row.querySelectorAll('.table__cell--value');
+      const values = Array.from(cells).map(c => c.textContent.trim());
+
+      const entry = { rank, team: teamName };
+      headers.forEach((header, index) => {
+        if (!header.includes('#') && !header.toLowerCase().includes('team')) {
+          entry[header] = values[index] || '';
+        }
+      });
+
+      if (teamName) {
+        standings.push(entry);
+      }
+    });
+
+    return standings;
+  });
+
+  await page.close();
+  return standingsData;
+};
+
+export const getMatchLineups = async (browser, matchId) => {
+  const page = await browser.newPage();
+  const url = `${BASE_URL}/match/${matchId}/#/match-summary/lineups`;
+  await page.goto(url, { waitUntil: 'networkidle2', timeout: 30000 });
+  await new Promise(resolve => setTimeout(resolve, 2000));
+
+  const lineupData = await page.evaluate(() => {
+    const result = { home: [], away: [] };
+
+    const homeSection = document.querySelector('.section--homeTeam, .lf__side--home');
+    const awaySection = document.querySelector('.section--awayTeam, .lf__side--away');
+
+    if (homeSection) {
+      const players = homeSection.querySelectorAll('.lf__participantRow, .lineup__player');
+      players.forEach((p) => {
+        const name = p.querySelector('.lf__participantName, .lineup__playerName')?.textContent?.trim() || '';
+        const number = p.querySelector('.lf__participantNumber, .lineup__playerNumber')?.textContent?.trim() || '';
+        const position = p.querySelector('.lf__participantPosition, .lineup__playerPosition')?.textContent?.trim() || '';
+        if (name) {
+          result.home.push({ number, name, position });
+        }
+      });
+    }
+
+    if (awaySection) {
+      const players = awaySection.querySelectorAll('.lf__participantRow, .lineup__player');
+      players.forEach((p) => {
+        const name = p.querySelector('.lf__participantName, .lineup__playerName')?.textContent?.trim() || '';
+        const number = p.querySelector('.lf__participantNumber, .lineup__playerNumber')?.textContent?.trim() || '';
+        const position = p.querySelector('.lf__participantPosition, .lineup__playerPosition')?.textContent?.trim() || '';
+        if (name) {
+          result.away.push({ number, name, position });
+        }
+      });
+    }
+
+    return result;
+  });
+
+  await page.close();
+  return lineupData;
 };
 
 

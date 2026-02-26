@@ -7,6 +7,10 @@ import {
   generateCSVDataResults,
   generateCSVPointByPoint,
   generateCSVFromObject,
+  generateCSVOdds,
+  generateCSVHeadToHead,
+  generateCSVStandings,
+  generateCSVLineups,
 } from './csvGenerator.js';
 import { formatFecha } from './fecha.js';
 import { BASE_URL, BASKETBALL_URL } from './constants/index.js';
@@ -363,6 +367,11 @@ function testCliArgumentParsing() {
       includeStatsPlayer: false,
       includeStatsMatch: false,
       includePointByPoint: false,
+      includeOdds: false,
+      includeH2H: false,
+      includeStandings: false,
+      includeLineups: false,
+      includeAll: false,
     };
     argv.forEach(arg => {
       if (arg.startsWith("country=")) args.country = arg.split("country=")[1];
@@ -374,7 +383,22 @@ function testCliArgumentParsing() {
       if (arg === "includeStatsPlayer=true") args.includeStatsPlayer = true;
       if (arg === "includeStatsMatch=true") args.includeStatsMatch = true;
       if (arg === "includePointByPoint=true") args.includePointByPoint = true;
+      if (arg === "includeOdds=true") args.includeOdds = true;
+      if (arg === "includeH2H=true") args.includeH2H = true;
+      if (arg === "includeStandings=true") args.includeStandings = true;
+      if (arg === "includeLineups=true") args.includeLineups = true;
+      if (arg === "includeAll=true") args.includeAll = true;
     });
+    if (args.includeAll) {
+      args.includeMatchData = true;
+      args.includeStatsPlayer = true;
+      args.includeStatsMatch = true;
+      args.includePointByPoint = true;
+      args.includeOdds = true;
+      args.includeH2H = true;
+      args.includeLineups = true;
+      args.includeStandings = true;
+    }
     return args;
   }
 
@@ -420,6 +444,40 @@ function testCliArgumentParsing() {
   const args6 = parseArgs(['country=spain', 'league=acb', 'action=results']);
   const folderName6 = args6.competition ? args6.competition : `${args6.country}_${args6.league}`;
   assert(folderName6 === 'spain_acb', 'Folder name uses country_league when no competition');
+
+  // Test new include flags
+  const args7 = parseArgs([
+    'country=spain', 'league=acb', 'action=results',
+    'includeOdds=true', 'includeH2H=true', 'includeStandings=true', 'includeLineups=true',
+  ]);
+  assert(args7.includeOdds === true, 'Parses includeOdds=true');
+  assert(args7.includeH2H === true, 'Parses includeH2H=true');
+  assert(args7.includeStandings === true, 'Parses includeStandings=true');
+  assert(args7.includeLineups === true, 'Parses includeLineups=true');
+
+  // Test includeAll flag
+  const args8 = parseArgs(['country=spain', 'league=acb', 'action=results', 'includeAll=true']);
+  assert(args8.includeAll === true, 'Parses includeAll=true');
+  assert(args8.includeMatchData === true, 'includeAll enables includeMatchData');
+  assert(args8.includeStatsPlayer === true, 'includeAll enables includeStatsPlayer');
+  assert(args8.includeStatsMatch === true, 'includeAll enables includeStatsMatch');
+  assert(args8.includePointByPoint === true, 'includeAll enables includePointByPoint');
+  assert(args8.includeOdds === true, 'includeAll enables includeOdds');
+  assert(args8.includeH2H === true, 'includeAll enables includeH2H');
+  assert(args8.includeLineups === true, 'includeAll enables includeLineups');
+  assert(args8.includeStandings === true, 'includeAll enables includeStandings');
+
+  // Test standings action
+  const args9 = parseArgs(['country=spain', 'league=acb', 'action=standings']);
+  assert(args9.action === 'standings', 'Parses action=standings');
+
+  // Test new flags default to false
+  const args10 = parseArgs([]);
+  assert(args10.includeOdds === false, 'includeOdds defaults to false');
+  assert(args10.includeH2H === false, 'includeH2H defaults to false');
+  assert(args10.includeStandings === false, 'includeStandings defaults to false');
+  assert(args10.includeLineups === false, 'includeLineups defaults to false');
+  assert(args10.includeAll === false, 'includeAll defaults to false');
 }
 
 // ─── Integration-style Tests ───────────────────────────────────────
@@ -464,6 +522,11 @@ async function testMatchSummaryCSVFromObject() {
     home: { name: 'Real Madrid', image: 'https://example.com/rm.png' },
     away: { name: 'Barcelona', image: 'https://example.com/fcb.png' },
     result: { home: '95', away: '88' },
+    status: 'Finished',
+    venue: 'WiZink Center, Madrid',
+    referee: 'John Smith',
+    attendance: '12500',
+    round: 'Round 15',
     totalLocal: '95',
     firstLocal: '24',
     secondLocal: '22',
@@ -491,6 +554,154 @@ async function testMatchSummaryCSVFromObject() {
   assert(headers.includes('result_home'), 'Has result_home header');
   assert(headers.includes('totalLocal'), 'Has totalLocal header');
   assert(headers.includes('firstLocal'), 'Has firstLocal header');
+  assert(headers.includes('status'), 'Has status header');
+  assert(headers.includes('venue'), 'Has venue header');
+  assert(headers.includes('referee'), 'Has referee header');
+  assert(headers.includes('attendance'), 'Has attendance header');
+  assert(headers.includes('round'), 'Has round header');
+}
+
+// ─── generateCSVOdds Tests ─────────────────────────────────────────
+
+async function testGenerateCSVOdds() {
+  console.log('\n--- Test: generateCSVOdds with odds data ---');
+  const data = [
+    { bookmaker: 'Bet365', odd1: '1.50', oddX: '4.00', odd2: '2.80' },
+    { bookmaker: 'Bwin', odd1: '1.55', oddX: '3.90', odd2: '2.70' },
+  ];
+  const filePath = path.join(TEST_OUTPUT_DIR, 'TEST_ODDS');
+  generateCSVOdds(data, filePath);
+  await new Promise(resolve => setTimeout(resolve, FILE_WRITE_DELAY_MS));
+
+  const csvPath = `${filePath}.csv`;
+  assert(fs.existsSync(csvPath), 'Odds CSV file was created');
+
+  const content = fs.readFileSync(csvPath, 'utf-8');
+  const lines = content.trim().split('\n');
+  assert(lines[0] === 'bookmaker,odd1,oddX,odd2', `Odds header row is correct (got ${lines[0]})`);
+  assert(lines.length === 3, `Odds CSV has header + 2 rows (got ${lines.length})`);
+  assert(lines[1].includes('Bet365'), 'First row contains Bet365');
+}
+
+async function testGenerateCSVOddsEmpty() {
+  console.log('\n--- Test: generateCSVOdds with empty data ---');
+  const filePath = path.join(TEST_OUTPUT_DIR, 'TEST_ODDS_EMPTY');
+  generateCSVOdds([], filePath);
+  await new Promise(resolve => setTimeout(resolve, FILE_WRITE_DELAY_MS));
+  assert(!fs.existsSync(`${filePath}.csv`), 'Odds CSV NOT created for empty data');
+}
+
+// ─── generateCSVHeadToHead Tests ───────────────────────────────────
+
+async function testGenerateCSVHeadToHead() {
+  console.log('\n--- Test: generateCSVHeadToHead with H2H data ---');
+  const data = {
+    homeLastMatches: [
+      { date: '01.01.2025', event: 'ACB', homeTeam: 'Real Madrid', awayTeam: 'Baskonia', result: '90 - 85' },
+    ],
+    awayLastMatches: [
+      { date: '02.01.2025', event: 'ACB', homeTeam: 'Barcelona', awayTeam: 'Valencia', result: '88 - 82' },
+    ],
+    directMatches: [
+      { date: '15.12.2024', event: 'ACB', homeTeam: 'Real Madrid', awayTeam: 'Barcelona', result: '92 - 88' },
+    ],
+  };
+  const filePath = path.join(TEST_OUTPUT_DIR, 'TEST_H2H');
+  generateCSVHeadToHead(data, filePath);
+  await new Promise(resolve => setTimeout(resolve, FILE_WRITE_DELAY_MS));
+
+  const csvPath = `${filePath}.csv`;
+  assert(fs.existsSync(csvPath), 'H2H CSV file was created');
+
+  const content = fs.readFileSync(csvPath, 'utf-8');
+  assert(content.includes('homeLastMatches'), 'H2H CSV contains homeLastMatches section');
+  assert(content.includes('awayLastMatches'), 'H2H CSV contains awayLastMatches section');
+  assert(content.includes('directMatches'), 'H2H CSV contains directMatches section');
+  assert(content.includes('Real Madrid'), 'H2H CSV contains Real Madrid');
+}
+
+async function testGenerateCSVHeadToHeadNull() {
+  console.log('\n--- Test: generateCSVHeadToHead with null ---');
+  const filePath = path.join(TEST_OUTPUT_DIR, 'TEST_H2H_NULL');
+  generateCSVHeadToHead(null, filePath);
+  await new Promise(resolve => setTimeout(resolve, FILE_WRITE_DELAY_MS));
+  assert(!fs.existsSync(`${filePath}.csv`), 'H2H CSV NOT created for null data');
+}
+
+// ─── generateCSVStandings Tests ────────────────────────────────────
+
+async function testGenerateCSVStandings() {
+  console.log('\n--- Test: generateCSVStandings with standings data ---');
+  const data = [
+    { rank: '1', team: 'Real Madrid', W: '15', L: '3', PTS: '33' },
+    { rank: '2', team: 'Barcelona', W: '14', L: '4', PTS: '32' },
+    { rank: '3', team: 'Baskonia', W: '12', L: '6', PTS: '30' },
+  ];
+  const filePath = path.join(TEST_OUTPUT_DIR, 'TEST_STANDINGS');
+  generateCSVStandings(data, filePath);
+  await new Promise(resolve => setTimeout(resolve, FILE_WRITE_DELAY_MS));
+
+  const csvPath = `${filePath}.csv`;
+  assert(fs.existsSync(csvPath), 'Standings CSV file was created');
+
+  const content = fs.readFileSync(csvPath, 'utf-8');
+  const lines = content.trim().split('\n');
+  assert(lines[0] === 'rank,team,W,L,PTS', `Standings header row is correct (got ${lines[0]})`);
+  assert(lines.length === 4, `Standings CSV has header + 3 rows (got ${lines.length})`);
+  assert(lines[1].includes('Real Madrid'), 'First row contains Real Madrid');
+}
+
+async function testGenerateCSVStandingsEmpty() {
+  console.log('\n--- Test: generateCSVStandings with empty data ---');
+  const filePath = path.join(TEST_OUTPUT_DIR, 'TEST_STANDINGS_EMPTY');
+  generateCSVStandings([], filePath);
+  await new Promise(resolve => setTimeout(resolve, FILE_WRITE_DELAY_MS));
+  assert(!fs.existsSync(`${filePath}.csv`), 'Standings CSV NOT created for empty data');
+}
+
+// ─── generateCSVLineups Tests ──────────────────────────────────────
+
+async function testGenerateCSVLineups() {
+  console.log('\n--- Test: generateCSVLineups with lineup data ---');
+  const data = {
+    home: [
+      { number: '7', name: 'Luka Doncic', position: 'G' },
+      { number: '23', name: 'Sergio Llull', position: 'G' },
+    ],
+    away: [
+      { number: '11', name: 'Juan Hernangomez', position: 'F' },
+    ],
+  };
+  const filePath = path.join(TEST_OUTPUT_DIR, 'TEST_LINEUPS');
+  generateCSVLineups(data, filePath);
+  await new Promise(resolve => setTimeout(resolve, FILE_WRITE_DELAY_MS));
+
+  const csvPath = `${filePath}.csv`;
+  assert(fs.existsSync(csvPath), 'Lineups CSV file was created');
+
+  const content = fs.readFileSync(csvPath, 'utf-8');
+  const lines = content.trim().split('\n');
+  assert(lines[0] === 'team,number,name,position', `Lineups header is correct (got ${lines[0]})`);
+  assert(lines.length === 4, `Lineups CSV has header + 3 rows (got ${lines.length})`);
+  assert(lines[1].includes('home'), 'First data row is home team');
+  assert(lines[1].includes('Luka Doncic'), 'First data row includes Luka Doncic');
+  assert(lines[3].includes('away'), 'Third data row is away team');
+}
+
+async function testGenerateCSVLineupsEmpty() {
+  console.log('\n--- Test: generateCSVLineups with empty data ---');
+  const filePath = path.join(TEST_OUTPUT_DIR, 'TEST_LINEUPS_EMPTY');
+  generateCSVLineups({ home: [], away: [] }, filePath);
+  await new Promise(resolve => setTimeout(resolve, FILE_WRITE_DELAY_MS));
+  assert(!fs.existsSync(`${filePath}.csv`), 'Lineups CSV NOT created for empty data');
+}
+
+async function testGenerateCSVLineupsNull() {
+  console.log('\n--- Test: generateCSVLineups with null ---');
+  const filePath = path.join(TEST_OUTPUT_DIR, 'TEST_LINEUPS_NULL');
+  generateCSVLineups(null, filePath);
+  await new Promise(resolve => setTimeout(resolve, FILE_WRITE_DELAY_MS));
+  assert(!fs.existsSync(`${filePath}.csv`), 'Lineups CSV NOT created for null data');
 }
 
 // ─── Run All Tests ─────────────────────────────────────────────────
@@ -543,6 +754,17 @@ async function testMatchSummaryCSVFromObject() {
     // Integration-style tests
     await testFullResultsWorkflow();
     await testMatchSummaryCSVFromObject();
+
+    // New CSV generators
+    await testGenerateCSVOdds();
+    await testGenerateCSVOddsEmpty();
+    await testGenerateCSVHeadToHead();
+    await testGenerateCSVHeadToHeadNull();
+    await testGenerateCSVStandings();
+    await testGenerateCSVStandingsEmpty();
+    await testGenerateCSVLineups();
+    await testGenerateCSVLineupsEmpty();
+    await testGenerateCSVLineupsNull();
   } finally {
     cleanup();
   }
