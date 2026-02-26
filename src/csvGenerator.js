@@ -16,6 +16,7 @@ export function generateCSVData(data, nombreArchivo) {
   fs.writeFile(`${nombreArchivo}.csv`, csvData, (err) => {
     if (err) throw err;
     console.log(`Data has been successfully exported to ${nombreArchivo}.csv`);
+    console.log(`📊 The CSV file contains ${data.length} ${data.length === 1 ? 'record' : 'records'} with ${headers.length} ${headers.length === 1 ? 'column' : 'columns'}.`);
   });
 }
 
@@ -31,6 +32,7 @@ export function generateCSVPlayerStats(data, fileName) {
 
   const csvContent = headerRow + rows;
   fs.writeFileSync(`${fileName}.csv`, csvContent);
+  console.log(`📊 The CSV file contains ${data.length} ${data.length === 1 ? 'record' : 'records'} with ${headers.length} ${headers.length === 1 ? 'column' : 'columns'}.`);
 }
 
 export function generateCSVStatsMatch(data, fileName) {
@@ -41,6 +43,8 @@ export function generateCSVStatsMatch(data, fileName) {
       console.error('Error writing CSV file:', err);
     } else {
       console.log('CSV file successfully generated:', `${fileName}.csv`);
+      const rowCount = data ? data.split('\n').filter(r => r.trim()).length : 0;
+      console.log(`📊 The CSV file contains ${rowCount} ${rowCount === 1 ? 'record' : 'records'}.`);
     }
   });
 }
@@ -61,6 +65,7 @@ export function generateCSVDataResults(data, nombreArchivo) {
   fs.writeFile(`${nombreArchivo}.csv`, csvData, (err) => {
     if (err) throw err;
     console.log(`Data has been successfully exported to ${nombreArchivo}.csv`);
+    console.log(`📊 The CSV file contains ${data.length} ${data.length === 1 ? 'record' : 'records'} with ${headers.length} ${headers.length === 1 ? 'column' : 'columns'}.`);
   });
 }
 
@@ -75,6 +80,7 @@ export function generateCSVPointByPoint(data, fileName, ids) {
       console.error('Error writing CSV file:', err);
     } else {
       console.log('CSV file successfully generated:', `${fileName}.csv`);
+      console.log(`📊 The CSV file contains ${data.length} ${data.length === 1 ? 'record' : 'records'}.`);
     }
   });
 }
@@ -98,6 +104,7 @@ export const generateCSVFromObject = (data, filePath) => {
   const csvContent = `${headers.join(',')}\n${values.join(',')}`;
   fs.writeFileSync(`${filePath}.csv`, csvContent, 'utf8');
   console.log(`CSV file created at ${filePath}.csv`);
+  console.log(`📊 The CSV file contains 1 record with ${headers.length} ${headers.length === 1 ? 'field' : 'fields'}.`);
 };
 
 export function generateCSVOdds(data, fileName) {
@@ -116,6 +123,7 @@ export function generateCSVOdds(data, fileName) {
   fs.writeFile(`${fileName}.csv`, csvData, (err) => {
     if (err) throw err;
     console.log(`Odds CSV exported to ${fileName}.csv`);
+    console.log(`📊 The CSV file contains ${data.length} ${data.length === 1 ? 'record' : 'records'} with ${headers.length} ${headers.length === 1 ? 'column' : 'columns'}.`);
   });
 }
 
@@ -142,6 +150,9 @@ export function generateCSVHeadToHead(data, fileName) {
   fs.writeFile(`${fileName}.csv`, csvContent.trim(), (err) => {
     if (err) throw err;
     console.log(`H2H CSV exported to ${fileName}.csv`);
+    const totalMatches = sections.reduce((sum, s) => sum + (data[s] || []).length, 0);
+    const activeSections = sections.filter(s => (data[s] || []).length > 0).length;
+    console.log(`📊 The CSV file contains ${totalMatches} ${totalMatches === 1 ? 'record' : 'records'} across ${activeSections} ${activeSections === 1 ? 'section' : 'sections'}.`);
   });
 }
 
@@ -161,6 +172,7 @@ export function generateCSVStandings(data, fileName) {
   fs.writeFile(`${fileName}.csv`, csvData, (err) => {
     if (err) throw err;
     console.log(`Standings CSV exported to ${fileName}.csv`);
+    console.log(`📊 The CSV file contains ${data.length} ${data.length === 1 ? 'record' : 'records'} with ${headers.length} ${headers.length === 1 ? 'column' : 'columns'}.`);
   });
 }
 
@@ -187,5 +199,7 @@ export function generateCSVLineups(data, fileName) {
   fs.writeFile(`${fileName}.csv`, csvContent.trim(), (err) => {
     if (err) throw err;
     console.log(`Lineups CSV exported to ${fileName}.csv`);
+    const totalPlayers = (data.home?.length || 0) + (data.away?.length || 0);
+    console.log(`📊 The CSV file contains ${totalPlayers} ${totalPlayers === 1 ? 'record' : 'records'}.`);
   });
 }
