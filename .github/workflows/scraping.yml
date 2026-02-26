@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - main
+      - master
 
 jobs:
   scrape:
@@ -42,27 +42,6 @@ jobs:
             libasound2 \
             libpango-1.0-0 \
             libpangocairo-1.0-0
-
-      - name: Run start with includeMatchData
-        run: npm run start ids=g_3_Uix0vJJK includeMatchData=true headless
-
-      - name: Run start with includeStatsPlayer
-        run: npm run start ids=g_3_0A5LCOZF includeStatsPlayer=true headless
-
-      - name: Run start with includeStatsMatch
-        run: npm run start ids=g_3_Uix0vJJK includeStatsMatch=true headless
-
-      - name: Run start with includePointByPoint
-        run: npm run start ids=g_3_Uix0vJJK includePointByPoint=true headless
-
-      - name: Run start with country and league
-        run: npm run start country=spain league=acb action=results headless
-
-      - name: Run results for spain acb-2005-2006
-        run: npm run results -- spain acb-2005-2006
-
-      - name: Run fixtures for world olympic-games
-        run: npm run fixtures -- world olympic-games
-
+            
       - name: Run basketball
         run: npm run basketball
