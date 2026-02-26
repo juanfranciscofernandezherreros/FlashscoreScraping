@@ -2,8 +2,7 @@ import puppeteer from "puppeteer"
 import { getAllBasketballResults } from "./src/utils/index.js";
 
 const browser = await puppeteer.launch({
-    //headless: "new", // Opting into the new headless mode instead of true
-    headless: "new",
+    headless: true,
     args: ['--no-sandbox', '--disable-setuid-sandbox']
 });
 
