@@ -368,4 +368,77 @@ export const getPointByPoint = async (browser, matchId,playerIndex) => {
   return matchHistoryRows;
 };
 
+export const getAllBasketballResults = async (browser) => {
+  const page = await browser.newPage();
+  const url = `${BASKETBALL_URL}/`;
+  await page.goto(url, { waitUntil: 'networkidle2', timeout: 60000 });
+
+  try {
+    await autoScroll(page);
+  } catch (error) {
+    console.error("Error while scrolling:", error);
+  }
+
+  const results = await page.evaluate(() => {
+    const data = [];
+    let currentCountry = '';
+    let currentLeague = '';
+
+    const sportName = document.querySelector('.heading__title')?.textContent.trim() || 'Basketball';
+
+    const elements = document.querySelectorAll('.event__header, .event__match');
+
+    elements.forEach((el) => {
+      if (el.classList.contains('event__header')) {
+        const countryEl = el.querySelector('.event__title--type');
+        const leagueEl = el.querySelector('.event__title--name');
+        currentCountry = countryEl ? countryEl.textContent.trim() : '';
+        currentLeague = leagueEl ? leagueEl.textContent.trim() : '';
+      } else if (el.classList.contains('event__match')) {
+        const matchId = el.id ? el.id.replace('g_1_', '') : '';
+        const eventTime = el.querySelector('.event__time')?.textContent.trim() || '';
+        const homeTeam = el.querySelector('.event__participant--home')?.textContent.trim() || '';
+        const awayTeam = el.querySelector('.event__participant--away')?.textContent.trim() || '';
+        const homeScore = el.querySelector('.event__score--home')?.textContent.trim() || '';
+        const awayScore = el.querySelector('.event__score--away')?.textContent.trim() || '';
+
+        const homeScoreParts = [];
+        const awayScoreParts = [];
+        for (let i = 1; i <= 5; i++) {
+          const hp = el.querySelector(`.event__part--home.event__part--${i}`);
+          const ap = el.querySelector(`.event__part--away.event__part--${i}`);
+          homeScoreParts.push(hp ? hp.textContent.trim() : '');
+          awayScoreParts.push(ap ? ap.textContent.trim() : '');
+        }
+
+        data.push({
+          country: currentCountry,
+          league: currentLeague,
+          matchId,
+          eventTime,
+          homeTeam,
+          awayTeam,
+          homeScore,
+          awayScore,
+          homeScore1: homeScoreParts[0],
+          homeScore2: homeScoreParts[1],
+          homeScore3: homeScoreParts[2],
+          homeScore4: homeScoreParts[3],
+          homeScore5: homeScoreParts[4],
+          awayScore1: awayScoreParts[0],
+          awayScore2: awayScoreParts[1],
+          awayScore3: awayScoreParts[2],
+          awayScore4: awayScoreParts[3],
+          awayScore5: awayScoreParts[4],
+        });
+      }
+    });
+
+    return { sportName, data };
+  });
+
+  await page.close();
+  return results;
+};
+
 
