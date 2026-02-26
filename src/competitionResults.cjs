@@ -14,7 +14,7 @@ const projectDir = './';
 
 // Ejecuta el comando npm para generar el CSV
 try {
-    execSync(`npm run start -- country=${country} league=${league} action=results includeMatchData=true includeStatsPlayer=true includeStatsMatch=true includePointByPoint=true generateCSV=true headless`, { cwd: projectDir, stdio: 'inherit' });
+    execSync(`npm run start -- country=${country} league=${league} action=results includeAll=true generateCSV=true headless`, { cwd: projectDir, stdio: 'inherit' });
     console.log('Comando ejecutado con éxito.');
 } catch (error) {
     console.error('Error al ejecutar el comando:', error.message);

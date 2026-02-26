@@ -11,7 +11,9 @@
     "read-csv": "node src/readAllCsv.js",
     "results": "node src/competitionResults.cjs",
     "fixtures": "node src/competitionFixtures.cjs",
-    "basketball": "node src/scrapeAllBasketball.js"
+    "standings": "node src/index.js action=standings",
+    "basketball": "node src/scrapeAllBasketball.js",
+    "basketball:detailed": "node src/scrapeAllBasketball.js detailed=true"
   },
   "keywords": [
     "puppeteer",
