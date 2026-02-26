@@ -591,7 +591,10 @@ export const getCountriesAndLeagues = async (browser) => {
       const firstChild = leftMenu.querySelector(':scope > div');
       const hasNestedGroups = firstChild && firstChild.querySelector(':scope > div');
       const countryGroups = hasNestedGroups
-        ? firstChild.querySelectorAll(':scope > div')
+        ? [
+            ...firstChild.querySelectorAll(':scope > div'),
+            ...Array.from(leftMenu.querySelectorAll(':scope > div')).filter((div) => div !== firstChild),
+          ]
         : leftMenu.querySelectorAll(':scope > div');
 
       countryGroups.forEach((group) => {
@@ -732,4 +735,3 @@ export const getMatchLineups = async (browser, matchId) => {
   await page.close();
   return lineupData;
 };
-

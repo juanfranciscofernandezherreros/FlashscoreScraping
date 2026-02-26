@@ -23,7 +23,10 @@ async function extractFromPage(page) {
       const firstChild = leftMenu.querySelector(':scope > div');
       const hasNestedGroups = firstChild && firstChild.querySelector(':scope > div');
       const countryGroups = hasNestedGroups
-        ? firstChild.querySelectorAll(':scope > div')
+        ? [
+            ...firstChild.querySelectorAll(':scope > div'),
+            ...Array.from(leftMenu.querySelectorAll(':scope > div')).filter((div) => div !== firstChild),
+          ]
         : leftMenu.querySelectorAll(':scope > div');
 
       countryGroups.forEach((group) => {
@@ -148,6 +151,36 @@ async function extractFromPage(page) {
     assert(results[2].league === 'ACB', `Third entry league is ACB (got ${results[2].league})`);
     assert(results[3].country === 'Germany', `Fourth entry country is Germany (got ${results[3].country})`);
     assert(results[3].league === '', `Fourth entry has no league (got "${results[3].league}")`);
+    await page.close();
+  }
+
+  // Test 2: Fallback to old .lmc__block selectors
+  console.log('\n--- Test: category-left-menu includes groups after a banner sibling ---');
+  {
+    const page = await browser.newPage();
+    await page.setContent(`
+      <div id="category-left-menu">
+        <div>
+          <div>
+            <a href="/basketball/usa/">USA</a>
+            <div><a href="/basketball/usa/nba/">NBA</a></div>
+          </div>
+          <div>
+            <a href="/basketball/spain/">Spain</a>
+            <div><a href="/basketball/spain/acb/">ACB</a></div>
+          </div>
+        </div>
+        <div class="banner"></div>
+        <div>
+          <a href="/basketball/argentina/">Argentina</a>
+          <div><a href="/basketball/argentina/lnb/">LNB</a></div>
+        </div>
+      </div>
+    `);
+    const results = await extractFromPage(page);
+    assert(results.length === 3, `Found 3 entries including post-banner group (got ${results.length})`);
+    const hasArgentina = results.some(r => r.country === 'Argentina' && r.league === 'LNB');
+    assert(hasArgentina, 'Found Argentina league after banner sibling');
     await page.close();
   }
 
