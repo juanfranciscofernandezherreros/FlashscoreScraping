@@ -154,7 +154,7 @@ async function extractFromPage(page) {
     await page.close();
   }
 
-  // Test 2: Fallback to old .lmc__block selectors
+  // Test 2: category-left-menu includes groups after a banner sibling
   console.log('\n--- Test: category-left-menu includes groups after a banner sibling ---');
   {
     const page = await browser.newPage();
@@ -184,7 +184,7 @@ async function extractFromPage(page) {
     await page.close();
   }
 
-  // Test 2: Fallback to old .lmc__block selectors
+  // Test 3: Fallback to old .lmc__block selectors
   console.log('\n--- Test: Fallback to .lmc__block selectors ---');
   {
     const page = await browser.newPage();
