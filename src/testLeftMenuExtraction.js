@@ -264,6 +264,79 @@ async function extractFromPage(page) {
     await page.close();
   }
 
+  // Test 7: "Show more" link reveals hidden country elements
+  console.log('\n--- Test: Show more link reveals hidden countries ---');
+  {
+    const page = await browser.newPage();
+    await page.setContent(`
+      <div id="category-left-menu">
+        <div>
+          <div>
+            <a href="/basketball/usa/">USA</a>
+            <div>
+              <a href="/basketball/usa/nba/">NBA</a>
+            </div>
+          </div>
+          <div>
+            <a href="/basketball/spain/">Spain</a>
+            <div>
+              <a href="/basketball/spain/acb/">ACB</a>
+            </div>
+          </div>
+          <div class="hidden-country" style="display:none;">
+            <a href="/basketball/albania/">Albania</a>
+            <div>
+              <a href="/basketball/albania/superliga/">Superliga</a>
+            </div>
+          </div>
+          <div class="hidden-country" style="display:none;">
+            <a href="/basketball/argentina/">Argentina</a>
+            <div>
+              <a href="/basketball/argentina/lnb/">LNB</a>
+            </div>
+          </div>
+          <a href="#" id="show-more-link">Show more</a>
+        </div>
+      </div>
+      <script>
+        document.getElementById('show-more-link').addEventListener('click', function(e) {
+          e.preventDefault();
+          document.querySelectorAll('.hidden-country').forEach(function(el) {
+            el.style.display = '';
+          });
+          this.style.display = 'none';
+        });
+      </script>
+    `);
+
+    // Simulate clicking "Show more" like getCountriesAndLeagues does
+    await page.evaluate(() => {
+      const leftMenu = document.getElementById('category-left-menu');
+      if (!leftMenu) return;
+      const links = leftMenu.querySelectorAll('a');
+      for (const link of links) {
+        const text = link.textContent.trim().toLowerCase();
+        if (text === 'show more' || text === 'show more...') {
+          link.click();
+          break;
+        }
+      }
+    });
+    await new Promise(resolve => setTimeout(resolve, 200));
+
+    const results = await extractFromPage(page);
+    assert(results.length === 4, `Found 4 entries after Show more (got ${results.length})`);
+    const hasAlbania = results.some(r => r.country === 'Albania');
+    assert(hasAlbania, 'Found Albania after Show more');
+    const hasArgentina = results.some(r => r.country === 'Argentina');
+    assert(hasArgentina, 'Found Argentina after Show more');
+    const hasUSA = results.some(r => r.country === 'USA');
+    assert(hasUSA, 'Still has USA after Show more');
+    const hasSpain = results.some(r => r.country === 'Spain');
+    assert(hasSpain, 'Still has Spain after Show more');
+    await page.close();
+  }
+
   await browser.close();
 
   console.log(`\n=== Results: ${passed} passed, ${failed} failed ===`);
