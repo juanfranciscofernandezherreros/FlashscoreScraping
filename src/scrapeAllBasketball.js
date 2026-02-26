@@ -121,22 +121,22 @@ const logError = (message) => {
             logError(`Error getting player stats for ${matchId}: ${error.message}`);
           }
 
-          for (let j = 0; j <= 4; j++) {
+          for (let period = 0; period <= 4; period++) {
             try {
-              const statsMatch = await getStatsMatch(browser, matchId, j);
+              const statsMatch = await getStatsMatch(browser, matchId, period);
               if (statsMatch) {
-                generateCSVStatsMatch(statsMatch, path.join(matchFolderPath, `STATS_MATCH_${matchId}_${j}`));
+                generateCSVStatsMatch(statsMatch, path.join(matchFolderPath, `STATS_MATCH_${matchId}_${period}`));
               }
             } catch (error) {
               // Expected for periods that don't exist
             }
           }
 
-          for (let j = 0; j <= 4; j++) {
+          for (let period = 0; period <= 4; period++) {
             try {
-              const pointByPoint = await getPointByPoint(browser, matchId, j);
+              const pointByPoint = await getPointByPoint(browser, matchId, period);
               if (pointByPoint && pointByPoint.length > 0) {
-                generateCSVPointByPoint(pointByPoint, path.join(matchFolderPath, `POINT_BY_POINT_${matchId}_${j}`), matchId);
+                generateCSVPointByPoint(pointByPoint, path.join(matchFolderPath, `POINT_BY_POINT_${matchId}_${period}`), matchId);
               }
             } catch (error) {
               // Expected for periods that don't exist
