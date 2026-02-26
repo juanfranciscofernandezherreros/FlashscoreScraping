@@ -553,30 +553,33 @@ export const getCountriesAndLeagues = async (browser) => {
 
   // Click "Show more" in the left menu to reveal all countries
   try {
-    const showMoreClicked = await page.evaluate(() => {
-      const leftMenu = document.getElementById('category-left-menu');
-      if (!leftMenu) return false;
-      const links = leftMenu.querySelectorAll('a');
-      for (const link of links) {
-        const href = (link.getAttribute('href') || '').toLowerCase();
-        if (href.includes('/basketball/')) continue;
-        const text = link.textContent.trim().toLowerCase();
-        const normalizedText = text.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-        if (
-          normalizedText.startsWith('show more') ||
-          normalizedText.startsWith('mostrar mas') ||
-          normalizedText.startsWith('ver mas') ||
-          normalizedText.startsWith('click here') ||
-          normalizedText.startsWith('haz clic aqui')
-        ) {
-          link.click();
-          return true;
+    for (let i = 0; i < 10; i++) {
+      const showMoreClicked = await page.evaluate(() => {
+        const leftMenu = document.getElementById('category-left-menu');
+        if (!leftMenu) return false;
+        const controls = leftMenu.querySelectorAll('a, button, [role="button"]');
+        for (const control of controls) {
+          const style = window.getComputedStyle(control);
+          if (style.display === 'none' || style.visibility === 'hidden') continue;
+          const href = (control.getAttribute('href') || '').toLowerCase();
+          if (href.includes('/basketball/')) continue;
+          const text = control.textContent.trim().toLowerCase();
+          const normalizedText = text.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+          if (
+            normalizedText.startsWith('show more') ||
+            normalizedText.startsWith('mostrar mas') ||
+            normalizedText.startsWith('ver mas') ||
+            normalizedText.startsWith('click here') ||
+            normalizedText.startsWith('haz clic aqui')
+          ) {
+            control.click();
+            return true;
+          }
         }
-      }
-      return false;
-    });
-    if (showMoreClicked) {
-      await new Promise(resolve => setTimeout(resolve, 1500));
+        return false;
+      });
+      if (!showMoreClicked) break;
+      await new Promise(resolve => setTimeout(resolve, 500));
     }
   } catch (error) {
     // If clicking "Show more" fails, continue with whatever is visible
