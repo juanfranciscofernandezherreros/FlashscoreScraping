@@ -5,6 +5,7 @@ services:
     build: .
     image: flashscore-scraping
     container_name: flashscore-scraping
+    shm_size: '256m'
     volumes:
       - ./src/csv:/app/src/csv
       - ./logs:/app/logs

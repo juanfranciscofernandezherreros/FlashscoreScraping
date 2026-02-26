@@ -43,7 +43,9 @@ ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
 
 WORKDIR /app
 
-COPY . .
+COPY package*.json ./
 RUN npm ci
+
+COPY . .
 
 CMD ["node", "src/index.js"]

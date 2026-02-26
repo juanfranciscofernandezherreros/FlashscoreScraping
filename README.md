@@ -36,8 +36,12 @@ docker-compose run --rm app node src/competitionFixtures.cjs world olympic-games
 ### Run directly with docker run
 
 ```bash
-docker run --rm -v "$(pwd)/src/csv:/app/src/csv" -v "$(pwd)/logs:/app/logs" flashscore-scraping \
-  node src/index.js country=spain league=acb action=results headless
+docker run --rm \
+  --shm-size=256m \
+  -v "$(pwd)/src/csv:/app/src/csv" \
+  -v "$(pwd)/logs:/app/logs" \
+  flashscore-scraping \
+  node src/index.js country=spain league=acb action=results
 ```
 
 ## Local npm Usage
