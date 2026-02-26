@@ -11,6 +11,7 @@ import {
   generateCSVHeadToHead,
   generateCSVStandings,
   generateCSVLineups,
+  generateCSVCountriesAndLeagues,
 } from './csvGenerator.js';
 import { formatFecha } from './fecha.js';
 import { BASE_URL, BASKETBALL_URL } from './constants/index.js';
@@ -704,6 +705,46 @@ async function testGenerateCSVLineupsNull() {
   assert(!fs.existsSync(`${filePath}.csv`), 'Lineups CSV NOT created for null data');
 }
 
+// ─── Countries & Leagues CSV Tests ─────────────────────────────────
+
+async function testGenerateCSVCountriesAndLeagues() {
+  console.log('\n--- Test: generateCSVCountriesAndLeagues with data ---');
+  const filePath = path.join(TEST_OUTPUT_DIR, 'TEST_COUNTRIES_LEAGUES');
+  const mockData = [
+    { country: 'USA', countryHref: '/basketball/usa/', league: 'NBA', leagueHref: '/basketball/usa/nba/' },
+    { country: 'USA', countryHref: '/basketball/usa/', league: 'WNBA', leagueHref: '/basketball/usa/wnba/' },
+    { country: 'SPAIN', countryHref: '/basketball/spain/', league: 'ACB', leagueHref: '/basketball/spain/acb/' },
+  ];
+  generateCSVCountriesAndLeagues(mockData, filePath);
+  await new Promise(resolve => setTimeout(resolve, FILE_WRITE_DELAY_MS));
+  const csvPath = `${filePath}.csv`;
+  assert(fs.existsSync(csvPath), 'Countries & Leagues CSV file was created');
+  const content = fs.readFileSync(csvPath, 'utf-8');
+  const lines = content.trim().split('\n');
+  assert(lines[0] === 'country,countryHref,league,leagueHref', 'Header row is correct (got ' + lines[0] + ')');
+  assert(lines.length === 4, `CSV has header + 3 data rows (got ${lines.length})`);
+  assert(lines[1].includes('USA'), 'First row contains USA');
+  assert(lines[1].includes('/basketball/usa/nba/'), 'First row contains NBA href');
+  assert(lines[3].includes('SPAIN'), 'Third row contains SPAIN');
+  assert(lines[3].includes('/basketball/spain/acb/'), 'Third row contains ACB href');
+}
+
+async function testGenerateCSVCountriesAndLeaguesEmpty() {
+  console.log('\n--- Test: generateCSVCountriesAndLeagues with empty data ---');
+  const filePath = path.join(TEST_OUTPUT_DIR, 'TEST_COUNTRIES_LEAGUES_EMPTY');
+  generateCSVCountriesAndLeagues([], filePath);
+  await new Promise(resolve => setTimeout(resolve, FILE_WRITE_DELAY_MS));
+  assert(!fs.existsSync(`${filePath}.csv`), 'Countries & Leagues CSV NOT created for empty data');
+}
+
+async function testGenerateCSVCountriesAndLeaguesNull() {
+  console.log('\n--- Test: generateCSVCountriesAndLeagues with null ---');
+  const filePath = path.join(TEST_OUTPUT_DIR, 'TEST_COUNTRIES_LEAGUES_NULL');
+  generateCSVCountriesAndLeagues(null, filePath);
+  await new Promise(resolve => setTimeout(resolve, FILE_WRITE_DELAY_MS));
+  assert(!fs.existsSync(`${filePath}.csv`), 'Countries & Leagues CSV NOT created for null data');
+}
+
 // ─── CSV Data Summary Tests ────────────────────────────────────────
 
 async function testCSVDataSummaryForResults() {
@@ -801,6 +842,11 @@ async function testCSVDataSummaryForPlayerStats() {
     await testGenerateCSVLineups();
     await testGenerateCSVLineupsEmpty();
     await testGenerateCSVLineupsNull();
+
+    // Countries & Leagues CSV
+    await testGenerateCSVCountriesAndLeagues();
+    await testGenerateCSVCountriesAndLeaguesEmpty();
+    await testGenerateCSVCountriesAndLeaguesNull();
 
     // CSV data summary tests
     await testCSVDataSummaryForResults();
