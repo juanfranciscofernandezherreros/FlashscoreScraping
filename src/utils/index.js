@@ -549,37 +549,108 @@ export const getCountriesAndLeagues = async (browser) => {
 
   const data = await page.evaluate(() => {
     const results = [];
-    const menuItems = document.querySelectorAll('.lmc__block');
 
-    menuItems.forEach((block) => {
-      const countryEl = block.querySelector('.lmc__blockName');
-      const countryName = countryEl ? countryEl.textContent.trim() : '';
-      const countryHref = countryEl ? (countryEl.closest('a')?.getAttribute('href') || countryEl.querySelector('a')?.getAttribute('href') || '') : '';
+    // Primary approach: use #category-left-menu structure
+    // Structure: #category-left-menu > div > div (each child div = country group)
+    const leftMenu = document.getElementById('category-left-menu');
+    if (leftMenu) {
+      // Structure: #category-left-menu > div (wrapper) > div (country groups)
+      // If the first child div contains child divs, treat it as a wrapper;
+      // otherwise treat direct children of leftMenu as country groups.
+      const firstChild = leftMenu.querySelector(':scope > div');
+      const hasNestedGroups = firstChild && firstChild.querySelector(':scope > div');
+      const countryGroups = hasNestedGroups
+        ? firstChild.querySelectorAll(':scope > div')
+        : leftMenu.querySelectorAll(':scope > div');
 
-      const leagueElements = block.querySelectorAll('.lmc__item a, .lmc__element a');
-      leagueElements.forEach((leagueEl) => {
-        const leagueName = leagueEl.textContent.trim();
-        const leagueHref = leagueEl.getAttribute('href') || '';
-        if (leagueName) {
+      countryGroups.forEach((group) => {
+        const anchors = group.querySelectorAll('a[href]');
+        if (anchors.length === 0) return;
+
+        let countryName = '';
+        let countryHref = '';
+
+        // Identify the country link (href with exactly /basketball/{country}/)
+        for (const a of anchors) {
+          const href = a.getAttribute('href') || '';
+          const parts = href.replace(/^\/|\/$/g, '').split('/');
+          if (parts[0] === 'basketball' && parts.length === 2 && parts[1]) {
+            countryName = a.textContent.trim() || parts[1];
+            countryHref = href;
+            break;
+          }
+        }
+
+        // If no explicit country link, derive from the first anchor's href
+        if (!countryName && anchors.length > 0) {
+          const href = anchors[0].getAttribute('href') || '';
+          const parts = href.replace(/^\/|\/$/g, '').split('/');
+          if (parts[0] === 'basketball' && parts.length >= 2) {
+            countryName = anchors[0].textContent.trim() || parts[1];
+            countryHref = '/basketball/' + parts[1] + '/';
+          }
+        }
+
+        // Collect league links (href with /basketball/{country}/{league}/)
+        let leagueFound = false;
+        anchors.forEach((a) => {
+          const href = a.getAttribute('href') || '';
+          const parts = href.replace(/^\/|\/$/g, '').split('/');
+          if (parts[0] === 'basketball' && parts.length >= 3 && parts[2]) {
+            leagueFound = true;
+            results.push({
+              country: countryName,
+              countryHref,
+              league: a.textContent.trim() || parts[2],
+              leagueHref: href,
+            });
+          }
+        });
+
+        // If no league links found, record the country entry
+        if (!leagueFound && countryName) {
           results.push({
             country: countryName,
             countryHref,
-            league: leagueName,
-            leagueHref,
+            league: '',
+            leagueHref: '',
           });
         }
       });
+    }
 
-      // If no league sub-items found, still record the country
-      if (leagueElements.length === 0 && countryName) {
-        results.push({
-          country: countryName,
-          countryHref,
-          league: '',
-          leagueHref: '',
+    // Fallback: try legacy selectors if #category-left-menu yielded no results
+    if (results.length === 0) {
+      const menuItems = document.querySelectorAll('.lmc__block');
+      menuItems.forEach((block) => {
+        const countryEl = block.querySelector('.lmc__blockName');
+        const countryName = countryEl ? countryEl.textContent.trim() : '';
+        const countryHref = countryEl ? (countryEl.closest('a')?.getAttribute('href') || countryEl.querySelector('a')?.getAttribute('href') || '') : '';
+
+        const leagueElements = block.querySelectorAll('.lmc__item a, .lmc__element a');
+        leagueElements.forEach((leagueEl) => {
+          const leagueName = leagueEl.textContent.trim();
+          const leagueHref = leagueEl.getAttribute('href') || '';
+          if (leagueName) {
+            results.push({
+              country: countryName,
+              countryHref,
+              league: leagueName,
+              leagueHref,
+            });
+          }
         });
-      }
-    });
+
+        if (leagueElements.length === 0 && countryName) {
+          results.push({
+            country: countryName,
+            countryHref,
+            league: '',
+            leagueHref: '',
+          });
+        }
+      });
+    }
 
     return results;
   });
