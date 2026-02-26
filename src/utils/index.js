@@ -558,15 +558,16 @@ export const getCountriesAndLeagues = async (browser) => {
       if (!leftMenu) return false;
       const links = leftMenu.querySelectorAll('a');
       for (const link of links) {
+        const href = (link.getAttribute('href') || '').toLowerCase();
+        if (href.includes('/basketball/')) continue;
         const text = link.textContent.trim().toLowerCase();
         const normalizedText = text.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
         if (
-          normalizedText === 'show more' ||
-          normalizedText === 'show more...' ||
-          normalizedText === 'mostrar mas' ||
-          normalizedText === 'mostrar mas...' ||
-          normalizedText === 'ver mas' ||
-          normalizedText === 'ver mas...'
+          normalizedText.startsWith('show more') ||
+          normalizedText.startsWith('mostrar mas') ||
+          normalizedText.startsWith('ver mas') ||
+          normalizedText.startsWith('click here') ||
+          normalizedText.startsWith('haz clic aqui')
         ) {
           link.click();
           return true;

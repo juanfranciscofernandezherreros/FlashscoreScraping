@@ -297,8 +297,8 @@ async function extractFromPage(page) {
     await page.close();
   }
 
-  // Test 7: "Show more" link reveals hidden country elements
-  console.log('\n--- Test: Show more link reveals hidden countries ---');
+  // Test 7: "Show more"/"Click here" link reveals hidden country elements
+  console.log('\n--- Test: Show more or Click here link reveals hidden countries ---');
   {
     const page = await browser.newPage();
     await page.setContent(`
@@ -328,7 +328,7 @@ async function extractFromPage(page) {
               <a href="/basketball/argentina/lnb/">LNB</a>
             </div>
           </div>
-          <a href="#" id="show-more-link">Mostrar más</a>
+          <a href="#" id="show-more-link">Click here to show more</a>
         </div>
       </div>
       <script>
@@ -348,15 +348,16 @@ async function extractFromPage(page) {
       if (!leftMenu) return;
       const links = leftMenu.querySelectorAll('a');
       for (const link of links) {
+        const href = (link.getAttribute('href') || '').toLowerCase();
+        if (href.includes('/basketball/')) continue;
         const text = link.textContent.trim().toLowerCase();
         const normalizedText = text.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
         if (
-          normalizedText === 'show more' ||
-          normalizedText === 'show more...' ||
-          normalizedText === 'mostrar mas' ||
-          normalizedText === 'mostrar mas...' ||
-          normalizedText === 'ver mas' ||
-          normalizedText === 'ver mas...'
+          normalizedText.startsWith('show more') ||
+          normalizedText.startsWith('mostrar mas') ||
+          normalizedText.startsWith('ver mas') ||
+          normalizedText.startsWith('click here') ||
+          normalizedText.startsWith('haz clic aqui')
         ) {
           link.click();
           break;
@@ -375,6 +376,59 @@ async function extractFromPage(page) {
     assert(hasUSA, 'Still has USA after Show more');
     const hasSpain = results.some(r => r.country === 'Spain');
     assert(hasSpain, 'Still has Spain after Show more');
+    await page.close();
+  }
+
+  // Test 8: "Haz clic aquí" link reveals hidden country elements
+  console.log('\n--- Test: Haz clic aquí link reveals hidden countries ---');
+  {
+    const page = await browser.newPage();
+    await page.setContent(`
+      <div id="category-left-menu">
+        <div>
+          <div><a href="/basketball/chile/">Chile</a></div>
+          <div class="hidden-country" style="display:none;">
+            <a href="/basketball/peru/">Peru</a>
+          </div>
+          <a href="#" id="show-more-link-es">Haz clic aquí para ver más</a>
+        </div>
+      </div>
+      <script>
+        document.getElementById('show-more-link-es').addEventListener('click', function(e) {
+          e.preventDefault();
+          document.querySelectorAll('.hidden-country').forEach(function(el) {
+            el.style.display = '';
+          });
+        });
+      </script>
+    `);
+
+    await page.evaluate(() => {
+      const leftMenu = document.getElementById('category-left-menu');
+      if (!leftMenu) return;
+      const links = leftMenu.querySelectorAll('a');
+      for (const link of links) {
+        const href = (link.getAttribute('href') || '').toLowerCase();
+        if (href.includes('/basketball/')) continue;
+        const text = link.textContent.trim().toLowerCase();
+        const normalizedText = text.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        if (
+          normalizedText.startsWith('show more') ||
+          normalizedText.startsWith('mostrar mas') ||
+          normalizedText.startsWith('ver mas') ||
+          normalizedText.startsWith('click here') ||
+          normalizedText.startsWith('haz clic aqui')
+        ) {
+          link.click();
+          break;
+        }
+      }
+    });
+    await new Promise(resolve => setTimeout(resolve, 200));
+
+    const results = await extractFromPage(page);
+    const hasPeru = results.some(r => r.country === 'Peru');
+    assert(hasPeru, 'Found Peru after Haz clic aquí');
     await page.close();
   }
 
