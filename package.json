@@ -10,7 +10,8 @@
     "competitions": "node src/scrapeCountries.js",
     "read-csv": "node src/readAllCsv.js",
     "results": "node src/competitionResults.cjs",
-    "fixtures": "node src/competitionFixtures.cjs"
+    "fixtures": "node src/competitionFixtures.cjs",
+    "basketball": "node src/scrapeAllBasketball.js"
   },
   "keywords": [
     "puppeteer",
