@@ -1,5 +1,3 @@
-import fs from "fs";
-
 export function formatFecha(fecha) {
   const year = fecha.getFullYear();
   const month = String(fecha.getMonth() + 1).padStart(2, '0');
