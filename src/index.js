@@ -333,6 +333,15 @@ const generateMatchCSVs = async (browser, match, competitionFolderPath, includeO
       const standingsFilePath = path.join(competitionFolderPath, `STANDINGS_${args.country}_${args.league}.csv`);
       generateCSVStandings(standingsData, standingsFilePath.replace('.csv', ''));
       logInfo("Standings CSV file generated.");
+    } else if (args.action === "build-links") {
+      logInfo("Building match links...");
+      const allMatchIdLists = await getMatchIdList(browser, args.country, args.league);
+      logInfo(`Total matches found: ${allMatchIdLists.eventDataList.length}`);
+      console.log(`Total matches found: ${allMatchIdLists.eventDataList.length}`);
+      allMatchIdLists.eventDataList.forEach(m => {
+        const matchId = m.matchId.replace('g_3_', '');
+        logInfo(`Match link: ${BASE_URL}/match/${matchId}/`);
+      });
     }
 
     // Extract standings if included (for results or ids actions)

@@ -131,6 +131,9 @@ jobs:
             libpango-1.0-0 \
             libpangocairo-1.0-0
 
+      - name: Build links
+        run: npm run build-links -- country=spain league=acb
+
       - name: Run results
         run: npm run results -- spain acb
 
@@ -172,6 +175,9 @@ jobs:
             libasound2t64 \
             libpango-1.0-0 \
             libpangocairo-1.0-0
+
+      - name: Build links
+        run: npm run build-links -- country=spain league=acb
 
       - name: Run fixtures
         run: npm run fixtures -- spain acb
