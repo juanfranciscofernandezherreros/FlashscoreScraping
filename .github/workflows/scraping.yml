@@ -21,7 +21,7 @@ jobs:
           node-version: '20'
 
       - name: Install dependencies
-        run: npm installQue el día 17 de enero a las 20:00 horas, el vehículo accedió al Parking Indigo Princesa (Calle de la Princesa, 25), permaneciendo estacionado en el mismo hasta el día 18 de enero a las 02:00 horas.
+        run: npm install
 
 
 
