@@ -54,7 +54,7 @@ jobs:
             libpango-1.0-0 \
             libpangocairo-1.0-0
 
-      - name: Generate ACB results for missing seasons
+      - name: Generate ACB results
         run: |
           COUNTRY="spain"
           COMPETITION_BASE="acb"
@@ -62,59 +62,47 @@ jobs:
           START_YEAR="${{ github.event.inputs.start_year || '2000' }}"
           END_YEAR="${{ github.event.inputs.end_year || '2024' }}"
 
-          echo "Starting results generation..."
-          echo "From ${START_YEAR}-$((START_YEAR + 1)) to ${END_YEAR}-$((END_YEAR + 1))"
-          echo "------------------------------------------------------------"
+          echo "Generating seasons from ${START_YEAR} to ${END_YEAR}"
 
           for YEAR in $(seq "$START_YEAR" "$END_YEAR"); do
             NEXT=$((YEAR + 1))
             SEASON="${YEAR}-${NEXT}"
             COMPETITION="${COMPETITION_BASE}-${SEASON}"
-            CSV_FOLDER="${BASE_RESULTS_FOLDER}/${COUNTRY}_${COMPETITION}"
 
-            if ls "${CSV_FOLDER}"/*.csv 2>/dev/null | grep -q .; then
-              echo "✅ Results already exist for ${SEASON}, skipping."
-            else
-              echo "🟡 Generating results for ${SEASON}..."
-              npm run start -- action=results country=${COUNTRY} league=${COMPETITION} includeMatchData=false
-            fi
-
-            echo "------------------------------------------------------------"
+            echo "Generating ${SEASON}..."
+            npm run start -- action=results country=${COUNTRY} league=${COMPETITION} includeMatchData=false
           done
 
-          echo "✅ Generation process completed."
+          echo "Generation complete"
 
-      - name: Commit and push each CSV separately
+      # 🔥 PUSH TO EXTERNAL REPO USING TOKEN_DOCKER
+
+      - name: Push CSV to basketball-data repository
+        env:
+          TOKEN_DOCKER: ${{ secrets.TOKEN_DOCKER }}
         run: |
-          git config user.name "Juan Francisco"
-          git config user.email "juanfranciscofernandezherreros@gmail.com"
+          git config --global user.name "Juan Francisco"
+          git config --global user.email "juanfranciscofernandezherreros@gmail.com"
 
-          FILES=$(find src/csv/results -type f -name "*.csv")
+          echo "Cloning basketball-data repository..."
 
-          if [ -z "$FILES" ]; then
-            echo "No CSV files found."
+          git clone https://x-access-token:${TOKEN_DOCKER}@github.com/juanfranciscofernandezherreros/basketball-data.git
+
+          echo "Copying CSV files..."
+
+          mkdir -p basketball-data/results
+          cp -r src/csv/results/* basketball-data/results/ 2>/dev/null || echo "No CSV files found"
+
+          cd basketball-data
+
+          git add .
+
+          if git diff --cached --quiet; then
+            echo "No changes detected"
             exit 0
           fi
 
-          echo "Processing CSV files..."
-          echo "----------------------------------------"
+          git commit -m "Update ACB results $(date -u) [skip ci]"
+          git push
 
-          CHANGED=false
-
-          for FILE in $FILES; do
-            git add "$FILE"
-
-            if ! git diff --cached --quiet; then
-              FILENAME=$(basename "$FILE")
-              git commit -m "chore: add/update ${FILENAME} [skip ci]"
-              CHANGED=true
-            else
-              git reset "$FILE"
-            fi
-          done
-
-          if [ "$CHANGED" = true ]; then
-            git push
-          else
-            echo "No changes detected to commit."
-          fi
+          echo "Push completed successfully"
