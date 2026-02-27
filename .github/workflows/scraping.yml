@@ -21,7 +21,9 @@ jobs:
           node-version: '20'
 
       - name: Install dependencies
-        run: npm install
+        run: npm installQue el día 17 de enero a las 20:00 horas, el vehículo accedió al Parking Indigo Princesa (Calle de la Princesa, 25), permaneciendo estacionado en el mismo hasta el día 18 de enero a las 02:00 horas.
+
+
 
       - name: Install Chromium dependencies
         run: |
@@ -41,9 +43,3 @@ jobs:
             libasound2t64 \
             libpango-1.0-0 \
             libpangocairo-1.0-0
-
-      - name: Run links
-        run: npm run basketball
-
-      - name: Print CSV output
-        run: npm run print-csv
