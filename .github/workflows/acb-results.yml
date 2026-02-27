@@ -9,11 +9,11 @@ on:
       start_year:
         description: 'First season start year (e.g. 2000 for 2000-2001)'
         required: false
-        default: '2015'
+        default: '2018'
       end_year:
         description: 'Last season start year (e.g. 2024 for 2024-2025)'
         required: false
-        default: '2017'
+        default: '2020'
 
 jobs:
   generate-results:
@@ -25,7 +25,7 @@ jobs:
     steps:
 
       # -----------------------------
-      # 1️⃣ Checkout repo actual
+      # 1️⃣ Checkout repository
       # -----------------------------
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -33,40 +33,57 @@ jobs:
           fetch-depth: 0
 
       # -----------------------------
-      # 2️⃣ Node setup
+      # 2️⃣ Node setup + cache
       # -----------------------------
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+          cache: 'npm'
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
       # -----------------------------
-      # 3️⃣ Dependencias Chromium
+      # 3️⃣ Chromium dependencies (Ubuntu 24 compatible)
       # -----------------------------
       - name: Install Chromium dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y \
-            libnss3 \
-            libatk1.0-0 \
+            fonts-liberation \
+            libasound2t64 \
             libatk-bridge2.0-0 \
+            libatk1.0-0 \
+            libcairo2 \
             libcups2 \
-            libdrm2 \
-            libxkbcommon0 \
-            libxcomposite1 \
-            libxdamage1 \
-            libxfixes3 \
-            libxrandr2 \
+            libdbus-1-3 \
+            libexpat1 \
+            libfontconfig1 \
             libgbm1 \
-            libasound2 \
+            libglib2.0-0 \
+            libgtk-3-0 \
+            libnspr4 \
+            libnss3 \
             libpango-1.0-0 \
-            libpangocairo-1.0-0
+            libpangocairo-1.0-0 \
+            libx11-6 \
+            libx11-xcb1 \
+            libxcb1 \
+            libxcomposite1 \
+            libxcursor1 \
+            libxdamage1 \
+            libxext6 \
+            libxfixes3 \
+            libxi6 \
+            libxrandr2 \
+            libxrender1 \
+            libxss1 \
+            libxtst6 \
+            xdg-utils
 
       # -----------------------------
-      # 4️⃣ Generar resultados
+      # 4️⃣ Generate ACB results
       # -----------------------------
       - name: Generate ACB results
         run: |
@@ -74,9 +91,8 @@ jobs:
 
           COUNTRY="spain"
           COMPETITION_BASE="acb"
-          BASE_RESULTS_FOLDER="src/csv/results"
 
-          START_YEAR="${{ github.event.inputs.start_year || '2000' }}"
+          START_YEAR="${{ github.event.inputs.start_year || '2015' }}"
           END_YEAR="${{ github.event.inputs.end_year || '2024' }}"
 
           echo "Generating seasons from ${START_YEAR} to ${END_YEAR}"
@@ -93,7 +109,7 @@ jobs:
           echo "Generation complete"
 
       # -----------------------------
-      # 5️⃣ Debug (ver qué se ha generado)
+      # 5️⃣ Debug generated files
       # -----------------------------
       - name: Debug generated files
         run: |
@@ -101,7 +117,7 @@ jobs:
           ls -R src/csv/results || echo "No results folder found"
 
       # -----------------------------
-      # 6️⃣ Push al repo externo
+      # 6️⃣ Push CSV to basketball-data repository
       # -----------------------------
       - name: Push CSV to basketball-data repository
         env:
@@ -116,14 +132,12 @@ jobs:
           git clone https://x-access-token:${TOKEN_DOCKER}@github.com/juanfranciscofernandezherreros/basketball-data.git
 
           echo "Syncing CSV files..."
-
           mkdir -p basketball-data/results
-
           rsync -av --delete src/csv/results/ basketball-data/results/
 
           cd basketball-data
 
-          git add .
+          git add results/
 
           if git diff --cached --quiet; then
             echo "No changes detected"
@@ -131,6 +145,6 @@ jobs:
           fi
 
           git commit -m "Update ACB results $(date -u) [skip ci]"
-          git push origin master
+          git push origin HEAD:master
 
           echo "Push completed successfully"
