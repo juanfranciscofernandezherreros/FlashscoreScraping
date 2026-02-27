@@ -86,8 +86,8 @@ jobs:
 
       - name: Commit and push each CSV separately
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "Juan Francisco"
+          git config user.email "juanfranciscofernandezherreros@gmail.com"
 
           FILES=$(find src/csv/results -type f -name "*.csv")
 
