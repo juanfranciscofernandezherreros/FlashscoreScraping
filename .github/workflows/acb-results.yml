@@ -57,8 +57,8 @@ jobs:
           COUNTRY="spain"
           COMPETITION_BASE="acb"
           BASE_RESULTS_FOLDER="src/csv/results"
-          START_YEAR="${{ github.event.inputs.start_year }}"
-          END_YEAR="${{ github.event.inputs.end_year }}"
+          START_YEAR="${{ github.event.inputs.start_year || '2000' }}"
+          END_YEAR="${{ github.event.inputs.end_year || '2024' }}"
 
           echo "Starting results generation for seasons ${START_YEAR}-$((START_YEAR + 1)) to ${END_YEAR}-$((END_YEAR + 1))..."
 
@@ -84,7 +84,9 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add src/csv/results/
+          if [ -d src/csv/results ]; then
+            git add src/csv/results/
+          fi
           if git diff --cached --quiet; then
             echo "No new CSV files to commit."
           else
