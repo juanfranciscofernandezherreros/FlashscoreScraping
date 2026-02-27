@@ -8,12 +8,19 @@ import { formatFecha } from './fecha.js';
 import { generateCSVData } from './csvGenerator.js';
 
 const DEFAULT_SOURCE = 'https://github.com/juanfranciscofernandezherreros/basketball-data/blob/master/basketball_leagues.csv';
+const ARCHIVE_PAGE_LOAD_DELAY_MS = 1200;
 
 export const resolveSourceUrl = (source) => {
-  if (!source.includes('github.com') || !source.includes('/blob/')) return source;
-  return source
-    .replace('https://github.com/', 'https://raw.githubusercontent.com/')
-    .replace('/blob/', '/');
+  try {
+    const parsed = new URL(source);
+    if (parsed.hostname !== 'github.com') return source;
+    const parts = parsed.pathname.split('/').filter(Boolean);
+    if (parts.length < 5 || parts[2] !== 'blob') return source;
+    const [owner, repo, , ref, ...fileParts] = parts;
+    return `https://raw.githubusercontent.com/${owner}/${repo}/${ref}/${fileParts.join('/')}`;
+  } catch {
+    return source;
+  }
 };
 
 export const buildArchiveUrl = (leagueHref) => {
@@ -82,7 +89,7 @@ const extractSeasons = async (browser, archiveUrl) => {
   const page = await browser.newPage();
   try {
     await page.goto(archiveUrl, { waitUntil: 'networkidle2', timeout: 60000 });
-    await new Promise((resolve) => setTimeout(resolve, 1200));
+    await new Promise((resolve) => setTimeout(resolve, ARCHIVE_PAGE_LOAD_DELAY_MS));
     const rawEntries = await page.evaluate(() => {
       return Array.from(document.querySelectorAll('a[href]')).map((a) => ({
         text: a.textContent || '',
@@ -107,10 +114,11 @@ const run = async () => {
   });
 
   const rows = await readLeagueRows(args.source);
+  const disableSandbox = process.env.PUPPETEER_DISABLE_SANDBOX === 'true' || process.env.CI === 'true';
   const browser = await puppeteer.launch({
     headless: true,
     executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
-    args: ['--no-sandbox', '--disable-setuid-sandbox'],
+    args: disableSandbox ? ['--no-sandbox', '--disable-setuid-sandbox'] : [],
   });
 
   try {
