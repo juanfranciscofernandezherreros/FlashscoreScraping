@@ -14,6 +14,7 @@
     "standings": "node src/index.js action=standings",
     "basketball": "node src/scrapeAllBasketball.js",
     "basketball:detailed": "node src/scrapeAllBasketball.js detailed=true",
+    "basketball:seasons": "node src/extractLeagueSeasons.js",
     "build-links": "node src/index.js action=build-links",
     "print-csv": "node src/printCsv.js"
   },

@@ -65,3 +65,6 @@ npm run basketball
 # Optional: include per-match detailed CSV exports (summary, stats, odds, h2h, lineups)
 npm run basketball:detailed
 
+# Extract all seasons from leagues CSV (reads basketball-data CSV by default)
+npm run basketball:seasons
+
