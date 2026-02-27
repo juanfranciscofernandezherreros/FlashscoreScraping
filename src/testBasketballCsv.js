@@ -212,6 +212,27 @@ async function testCsvFilePathWithTimestamp() {
   assert(lines.length === 4, `Timestamped CSV has correct number of rows (${lines.length})`);
 }
 
+async function testAutoCreateDirectory() {
+  console.log('\n--- Test: generateCSVDataResults auto-creates directory ---');
+
+  const deepDir = path.join(TEST_OUTPUT_DIR, 'auto_created', 'nested', 'dir');
+  const filePath = path.join(deepDir, 'TEST_AUTO_DIR');
+
+  assert(!fs.existsSync(deepDir), 'Nested directory does not exist before CSV generation');
+
+  generateCSVDataResults(mockBasketballData, filePath);
+
+  await new Promise(resolve => setTimeout(resolve, FILE_WRITE_DELAY_MS));
+
+  const csvPath = `${filePath}.csv`;
+  assert(fs.existsSync(deepDir), 'Nested directory was auto-created');
+  assert(fs.existsSync(csvPath), 'CSV file was created in auto-created directory');
+
+  const content = fs.readFileSync(csvPath, 'utf-8');
+  const lines = content.trim().split('\n');
+  assert(lines.length === 4, `CSV has header + 3 data rows in auto-created dir (got ${lines.length} lines)`);
+}
+
 // Run all tests
 (async () => {
   console.log('=== Basketball CSV Generation Tests ===\n');
@@ -223,6 +244,7 @@ async function testCsvFilePathWithTimestamp() {
     await testNullData();
     await testFormatFecha();
     await testCsvFilePathWithTimestamp();
+    await testAutoCreateDirectory();
   } finally {
     cleanup();
   }
