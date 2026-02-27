@@ -1,0 +1,90 @@
+name: ACB Results Scraping
+
+on:
+  workflow_dispatch:
+    inputs:
+      start_year:
+        description: 'First season start year (e.g. 2000 for 2000-2001)'
+        required: false
+        default: '2000'
+      end_year:
+        description: 'Last season start year (e.g. 2024 for 2024-2025)'
+        required: false
+        default: '2024'
+
+jobs:
+  generate-results:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Install Chromium dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libnss3 \
+            libatk1.0-0 \
+            libatk-bridge2.0-0 \
+            libcups2 \
+            libdrm2 \
+            libxkbcommon0 \
+            libxcomposite1 \
+            libxdamage1 \
+            libxfixes3 \
+            libxrandr2 \
+            libgbm1 \
+            libasound2t64 \
+            libpango-1.0-0 \
+            libpangocairo-1.0-0
+
+      - name: Generate ACB results for missing seasons
+        run: |
+          COUNTRY="spain"
+          COMPETITION_BASE="acb"
+          BASE_RESULTS_FOLDER="src/csv/results"
+          START_YEAR="${{ github.event.inputs.start_year }}"
+          END_YEAR="${{ github.event.inputs.end_year }}"
+
+          echo "Starting results generation for seasons ${START_YEAR}-$((START_YEAR + 1)) to ${END_YEAR}-$((END_YEAR + 1))..."
+
+          for YEAR in $(seq "$START_YEAR" "$END_YEAR"); do
+            NEXT=$((YEAR + 1))
+            SEASON="${YEAR}-${NEXT}"
+            COMPETITION="${COMPETITION_BASE}-${SEASON}"
+            CSV_FOLDER="${BASE_RESULTS_FOLDER}/${COUNTRY}_${COMPETITION}"
+
+            if ls "${CSV_FOLDER}"/*.csv 2>/dev/null | grep -q .; then
+              echo "✅ Results already exist for season ${SEASON}, skipping."
+            else
+              echo "🟡 No results found for season ${SEASON}, generating..."
+              npm run start -- action=results country=${COUNTRY} league=${COMPETITION} includeMatchData=false
+            fi
+
+            echo "----------------------------------------------"
+          done
+
+          echo "✅ Process completed."
+
+      - name: Commit and push generated CSV files
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add src/csv/results/
+          if git diff --cached --quiet; then
+            echo "No new CSV files to commit."
+          else
+            git commit -m "chore: add ACB results CSV files [skip ci]"
+            git push
+          fi
