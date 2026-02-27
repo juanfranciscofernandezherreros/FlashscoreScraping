@@ -1,6 +1,9 @@
 name: ACB Results Scraping
 
 on:
+  push:
+    branches:
+      - master
   workflow_dispatch:
     inputs:
       start_year:
