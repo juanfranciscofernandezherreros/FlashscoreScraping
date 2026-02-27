@@ -60,7 +60,9 @@ jobs:
           START_YEAR="${{ github.event.inputs.start_year || '2000' }}"
           END_YEAR="${{ github.event.inputs.end_year || '2024' }}"
 
-          echo "Starting results generation for seasons ${START_YEAR}-$((START_YEAR + 1)) to ${END_YEAR}-$((END_YEAR + 1))..."
+          echo "Starting results generation..."
+          echo "From ${START_YEAR}-$((START_YEAR + 1)) to ${END_YEAR}-$((END_YEAR + 1))"
+          echo "------------------------------------------------------------"
 
           for YEAR in $(seq "$START_YEAR" "$END_YEAR"); do
             NEXT=$((YEAR + 1))
@@ -69,27 +71,46 @@ jobs:
             CSV_FOLDER="${BASE_RESULTS_FOLDER}/${COUNTRY}_${COMPETITION}"
 
             if ls "${CSV_FOLDER}"/*.csv 2>/dev/null | grep -q .; then
-              echo "✅ Results already exist for season ${SEASON}, skipping."
+              echo "✅ Results already exist for ${SEASON}, skipping."
             else
-              echo "🟡 No results found for season ${SEASON}, generating..."
+              echo "🟡 Generating results for ${SEASON}..."
               npm run start -- action=results country=${COUNTRY} league=${COMPETITION} includeMatchData=false
             fi
 
-            echo "----------------------------------------------"
+            echo "------------------------------------------------------------"
           done
 
-          echo "✅ Process completed."
+          echo "✅ Generation process completed."
 
-      - name: Commit and push generated CSV files
+      - name: Commit and push each CSV separately
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          if [ -d src/csv/results ]; then
-            git add src/csv/results/
+
+          # Añadimos todos los cambios en results
+          git add -A src/csv/results
+
+          # Detectamos CSV nuevos o modificados
+          FILES=$(git diff --cached --name-only --diff-filter=AM | grep '\.csv$' || true)
+
+          if [ -z "$FILES" ]; then
+            echo "No CSV files to commit."
+            exit 0
           fi
-          if git diff --cached --quiet; then
-            echo "No new CSV files to commit."
-          else
-            git commit -m "chore: add ACB results CSV files [skip ci]"
-            git push
-          fi
+
+          echo "CSV files detected:"
+          echo "$FILES"
+          echo "------------------------------------------------------------"
+
+          # Commit individual por cada archivo
+          for FILE in $FILES; do
+            git reset HEAD .
+            git add "$FILE"
+
+            FILENAME=$(basename "$FILE")
+
+            git commit -m "chore: add/update ${FILENAME} [skip ci]"
+          done
+
+          # Push final
+          git push
