@@ -558,6 +558,27 @@ export const getCountriesAndLeagues = async (browser) => {
   try {
     for (let i = 0; i < MAX_EXPANSION_ATTEMPTS; i++) {
       const showMoreClicked = await mainPage.evaluate(() => {
+        // Try class-based selectors first (Flashscore uses lmc__showMore or similar)
+        const classSelectors = [
+          '.lmc__showMore',
+          '.showMore',
+          '.show-more',
+          '[class*="showMore"]',
+          '[class*="show-more"]',
+          '[class*="ShowMore"]',
+        ];
+        for (const sel of classSelectors) {
+          const el = document.querySelector(sel);
+          if (el) {
+            const style = window.getComputedStyle(el);
+            if (style.display !== 'none' && style.visibility !== 'hidden') {
+              el.click();
+              return true;
+            }
+          }
+        }
+
+        // Fallback: text-based search in the left menu
         const leftMenu = document.getElementById('category-left-menu');
         if (!leftMenu) return false;
         const controls = leftMenu.querySelectorAll('a, button, [role="button"]');
@@ -573,7 +594,9 @@ export const getCountriesAndLeagues = async (browser) => {
             normalizedText.startsWith('mostrar mas') ||
             normalizedText.startsWith('ver mas') ||
             normalizedText.startsWith('click here') ||
-            normalizedText.startsWith('haz clic aqui')
+            normalizedText.startsWith('haz clic aqui') ||
+            normalizedText === 'more' ||
+            normalizedText.includes('show all')
           ) {
             control.click();
             return true;
