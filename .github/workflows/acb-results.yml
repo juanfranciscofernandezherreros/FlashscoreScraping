@@ -24,6 +24,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -87,30 +89,32 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          # Añadimos todos los cambios en results
-          git add -A src/csv/results
-
-          # Detectamos CSV nuevos o modificados
-          FILES=$(git diff --cached --name-only --diff-filter=AM | grep '\.csv$' || true)
+          FILES=$(find src/csv/results -type f -name "*.csv")
 
           if [ -z "$FILES" ]; then
-            echo "No CSV files to commit."
+            echo "No CSV files found."
             exit 0
           fi
 
-          echo "CSV files detected:"
-          echo "$FILES"
-          echo "------------------------------------------------------------"
+          echo "Processing CSV files..."
+          echo "----------------------------------------"
 
-          # Commit individual por cada archivo
+          CHANGED=false
+
           for FILE in $FILES; do
-            git reset HEAD .
             git add "$FILE"
 
-            FILENAME=$(basename "$FILE")
-
-            git commit -m "chore: add/update ${FILENAME} [skip ci]"
+            if ! git diff --cached --quiet; then
+              FILENAME=$(basename "$FILE")
+              git commit -m "chore: add/update ${FILENAME} [skip ci]"
+              CHANGED=true
+            else
+              git reset "$FILE"
+            fi
           done
 
-          # Push final
-          git push
+          if [ "$CHANGED" = true ]; then
+            git push
+          else
+            echo "No changes detected to commit."
+          fi
