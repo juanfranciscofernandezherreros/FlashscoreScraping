@@ -1,4 +1,12 @@
 import fs from "fs";
+import path from "path";
+
+function ensureDirectoryExists(filePath) {
+  const dir = path.dirname(filePath);
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
+}
 
 export function generateCSVData(data, nombreArchivo) {
   if (!data || data.length === 0) {
@@ -13,6 +21,7 @@ export function generateCSVData(data, nombreArchivo) {
   const headerRow = headers.join(",") + "\n";
   const csvData = headerRow + csvContent;
 
+  ensureDirectoryExists(`${nombreArchivo}.csv`);
   fs.writeFile(`${nombreArchivo}.csv`, csvData, (err) => {
     if (err) throw err;
     console.log(`Data has been successfully exported to ${nombreArchivo}.csv`);
@@ -31,6 +40,7 @@ export function generateCSVPlayerStats(data, fileName) {
   }).join("\n");
 
   const csvContent = headerRow + rows;
+  ensureDirectoryExists(`${fileName}.csv`);
   fs.writeFileSync(`${fileName}.csv`, csvContent);
   console.log(`📊 The CSV file contains ${data.length} ${data.length === 1 ? 'record' : 'records'} with ${headers.length} ${headers.length === 1 ? 'column' : 'columns'}.`);
 }
@@ -38,6 +48,7 @@ export function generateCSVPlayerStats(data, fileName) {
 export function generateCSVStatsMatch(data, fileName) {
   const columnTitles = 'Home Score,Category,Away Score\n';
   const csvData = columnTitles + data;
+  ensureDirectoryExists(`${fileName}.csv`);
   fs.writeFile(`${fileName}.csv`, csvData, (err) => {
     if (err) {
       console.error('Error writing CSV file:', err);
@@ -62,6 +73,7 @@ export function generateCSVDataResults(data, nombreArchivo) {
   ).join("\n");
 
   const csvData = headerRow + csvContent;
+  ensureDirectoryExists(`${nombreArchivo}.csv`);
   fs.writeFile(`${nombreArchivo}.csv`, csvData, (err) => {
     if (err) throw err;
     console.log(`Data has been successfully exported to ${nombreArchivo}.csv`);
@@ -75,6 +87,7 @@ export function generateCSVPointByPoint(data, fileName, ids) {
   const csvData = data.map((item) => `${ids},${item.score}`).join('\n');
   console.log('ID:', ids);
   
+  ensureDirectoryExists(`${fileName}.csv`);
   fs.writeFile(`${fileName}.csv`, csvData, (err) => {
     if (err) {
       console.error('Error writing CSV file:', err);
@@ -102,6 +115,7 @@ export const generateCSVFromObject = (data, filePath) => {
   }
 
   const csvContent = `${headers.join(',')}\n${values.join(',')}`;
+  ensureDirectoryExists(`${filePath}.csv`);
   fs.writeFileSync(`${filePath}.csv`, csvContent, 'utf8');
   console.log(`CSV file created at ${filePath}.csv`);
   console.log(`📊 The CSV file contains 1 record with ${headers.length} ${headers.length === 1 ? 'field' : 'fields'}.`);
@@ -120,6 +134,7 @@ export function generateCSVOdds(data, fileName) {
   ).join("\n");
 
   const csvData = headerRow + csvContent;
+  ensureDirectoryExists(`${fileName}.csv`);
   fs.writeFile(`${fileName}.csv`, csvData, (err) => {
     if (err) throw err;
     console.log(`Odds CSV exported to ${fileName}.csv`);
@@ -147,6 +162,7 @@ export function generateCSVHeadToHead(data, fileName) {
     }
   });
 
+  ensureDirectoryExists(`${fileName}.csv`);
   fs.writeFile(`${fileName}.csv`, csvContent.trim(), (err) => {
     if (err) throw err;
     console.log(`H2H CSV exported to ${fileName}.csv`);
@@ -169,6 +185,7 @@ export function generateCSVStandings(data, fileName) {
   ).join("\n");
 
   const csvData = headerRow + csvContent;
+  ensureDirectoryExists(`${fileName}.csv`);
   fs.writeFile(`${fileName}.csv`, csvData, (err) => {
     if (err) throw err;
     console.log(`Standings CSV exported to ${fileName}.csv`);
@@ -189,6 +206,7 @@ export function generateCSVCountriesAndLeagues(data, fileName) {
   ).join("\n");
 
   const csvData = headerRow + csvContent;
+  ensureDirectoryExists(`${fileName}.csv`);
   fs.writeFile(`${fileName}.csv`, csvData, (err) => {
     if (err) throw err;
     console.log(`Countries & Leagues CSV exported to ${fileName}.csv`);
@@ -216,6 +234,7 @@ export function generateCSVLineups(data, fileName) {
     });
   }
 
+  ensureDirectoryExists(`${fileName}.csv`);
   fs.writeFile(`${fileName}.csv`, csvContent.trim(), (err) => {
     if (err) throw err;
     console.log(`Lineups CSV exported to ${fileName}.csv`);
