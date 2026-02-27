@@ -9,24 +9,32 @@ on:
       start_year:
         description: 'First season start year (e.g. 2000 for 2000-2001)'
         required: false
-        default: '2000'
+        default: '2015'
       end_year:
         description: 'Last season start year (e.g. 2024 for 2024-2025)'
         required: false
-        default: '2024'
+        default: '207'
 
 jobs:
   generate-results:
     runs-on: ubuntu-latest
+
     permissions:
       contents: write
 
     steps:
+
+      # -----------------------------
+      # 1️⃣ Checkout repo actual
+      # -----------------------------
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
+      # -----------------------------
+      # 2️⃣ Node setup
+      # -----------------------------
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
@@ -35,6 +43,9 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      # -----------------------------
+      # 3️⃣ Dependencias Chromium
+      # -----------------------------
       - name: Install Chromium dependencies
         run: |
           sudo apt-get update
@@ -50,15 +61,21 @@ jobs:
             libxfixes3 \
             libxrandr2 \
             libgbm1 \
-            libasound2t64 \
+            libasound2 \
             libpango-1.0-0 \
             libpangocairo-1.0-0
 
+      # -----------------------------
+      # 4️⃣ Generar resultados
+      # -----------------------------
       - name: Generate ACB results
         run: |
+          set -e
+
           COUNTRY="spain"
           COMPETITION_BASE="acb"
           BASE_RESULTS_FOLDER="src/csv/results"
+
           START_YEAR="${{ github.event.inputs.start_year || '2000' }}"
           END_YEAR="${{ github.event.inputs.end_year || '2024' }}"
 
@@ -75,23 +92,34 @@ jobs:
 
           echo "Generation complete"
 
-      # 🔥 PUSH TO EXTERNAL REPO USING TOKEN_DOCKER
+      # -----------------------------
+      # 5️⃣ Debug (ver qué se ha generado)
+      # -----------------------------
+      - name: Debug generated files
+        run: |
+          echo "Contenido de src/csv/results:"
+          ls -R src/csv/results || echo "No results folder found"
 
+      # -----------------------------
+      # 6️⃣ Push al repo externo
+      # -----------------------------
       - name: Push CSV to basketball-data repository
         env:
           TOKEN_DOCKER: ${{ secrets.TOKEN_DOCKER }}
         run: |
+          set -e
+
           git config --global user.name "Juan Francisco"
           git config --global user.email "juanfranciscofernandezherreros@gmail.com"
 
           echo "Cloning basketball-data repository..."
-
           git clone https://x-access-token:${TOKEN_DOCKER}@github.com/juanfranciscofernandezherreros/basketball-data.git
 
-          echo "Copying CSV files..."
+          echo "Syncing CSV files..."
 
           mkdir -p basketball-data/results
-          cp -r src/csv/results/* basketball-data/results/ 2>/dev/null || echo "No CSV files found"
+
+          rsync -av --delete src/csv/results/ basketball-data/results/
 
           cd basketball-data
 
@@ -103,6 +131,6 @@ jobs:
           fi
 
           git commit -m "Update ACB results $(date -u) [skip ci]"
-          git push
+          git push origin master
 
           echo "Push completed successfully"
