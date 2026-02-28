@@ -369,7 +369,7 @@ function testCliArgumentParsing() {
   console.log('\n--- Test: CLI argument parsing logic ---');
 
   // Simulate the argument parsing logic from index.js
-  function parseArgs(argv) {
+  function parseArgs(argv, env = {}) {
     const args = {
       country: null,
       ids: null,
@@ -402,6 +402,20 @@ function testCliArgumentParsing() {
       if (arg === "includeLineups=true") args.includeLineups = true;
       if (arg === "includeAll=true") args.includeAll = true;
     });
+    args.country = args.country ?? env.npm_config_country ?? null;
+    args.ids = args.ids ?? env.npm_config_ids ?? null;
+    args.league = args.league ?? env.npm_config_league ?? null;
+    args.competition = args.competition ?? env.npm_config_competition ?? null;
+    args.action = args.action ?? env.npm_config_action ?? null;
+    if (!args.includeMatchData && env.npm_config_includematchdata === "true") args.includeMatchData = true;
+    if (!args.includeStatsPlayer && env.npm_config_includestatsplayer === "true") args.includeStatsPlayer = true;
+    if (!args.includeStatsMatch && env.npm_config_includestatsmatch === "true") args.includeStatsMatch = true;
+    if (!args.includePointByPoint && env.npm_config_includepointbypoint === "true") args.includePointByPoint = true;
+    if (!args.includeOdds && env.npm_config_includeodds === "true") args.includeOdds = true;
+    if (!args.includeH2H && env.npm_config_includeh2h === "true") args.includeH2H = true;
+    if (!args.includeStandings && env.npm_config_includestandings === "true") args.includeStandings = true;
+    if (!args.includeLineups && env.npm_config_includelineups === "true") args.includeLineups = true;
+    if (!args.includeAll && env.npm_config_includeall === "true") args.includeAll = true;
     if (args.includeAll) {
       args.includeMatchData = true;
       args.includeStatsPlayer = true;
@@ -455,8 +469,12 @@ function testCliArgumentParsing() {
   assert(folderName5 === 'liga_endesa_2024', 'Folder name uses competition when provided');
 
   const args6 = parseArgs(['country=spain', 'league=acb', 'action=results']);
-  const folderName6 = args6.competition ? args6.competition : `${args6.country}_${args6.league}`;
+  const folderName6 = args6.competition ? args6.competition : (args6.country && args6.league ? `${args6.country}_${args6.league}` : 'general');
   assert(folderName6 === 'spain_acb', 'Folder name uses country_league when no competition');
+
+  const args6b = parseArgs([]);
+  const folderName6b = args6b.competition ? args6b.competition : (args6b.country && args6b.league ? `${args6b.country}_${args6b.league}` : 'general');
+  assert(folderName6b === 'general', 'Folder name falls back to general when country/league are missing');
 
   // Test new include flags
   const args7 = parseArgs([
@@ -491,7 +509,28 @@ function testCliArgumentParsing() {
   assert(args10.includeStandings === false, 'includeStandings defaults to false');
   assert(args10.includeLineups === false, 'includeLineups defaults to false');
   assert(args10.includeAll === false, 'includeAll defaults to false');
-}
+
+  const args11 = parseArgs([], {
+    npm_config_country: 'spain',
+    npm_config_league: 'acb',
+    npm_config_action: 'results',
+    npm_config_ids: 'g_3_Uix0vJJK',
+    npm_config_includematchdata: 'true',
+    npm_config_includestatsplayer: 'true',
+    npm_config_includestatsmatch: 'true',
+    npm_config_includepointbypoint: 'true',
+    npm_config_includeall: 'true',
+  });
+  assert(args11.country === 'spain', 'Reads country from npm_config_country');
+  assert(args11.league === 'acb', 'Reads league from npm_config_league');
+  assert(args11.action === 'results', 'Reads action from npm_config_action');
+  assert(args11.ids === 'g_3_Uix0vJJK', 'Reads ids from npm_config_ids');
+  assert(args11.includeMatchData === true, 'Reads includeMatchData from npm_config_includematchdata');
+  assert(args11.includeStatsPlayer === true, 'Reads includeStatsPlayer from npm_config_includestatsplayer');
+  assert(args11.includeStatsMatch === true, 'Reads includeStatsMatch from npm_config_includestatsmatch');
+  assert(args11.includePointByPoint === true, 'Reads includePointByPoint from npm_config_includepointbypoint');
+  assert(args11.includeAll === true, 'Reads includeAll from npm_config_includeall');
+  }
 
 // ─── Integration-style Tests ───────────────────────────────────────
 
