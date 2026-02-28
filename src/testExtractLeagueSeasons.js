@@ -42,6 +42,22 @@ async function testGetLeagueHrefFromUrlColumn() {
     href === 'https://www.flashscore.com/basketball/australia/nbl/',
     `URL column is detected as league href (got ${href})`,
   );
+  const uppercaseUrlHref = getLeagueHref({
+    URL: 'https://www.flashscore.com/basketball/australia/wnbl-women/',
+    url: 'https://www.flashscore.com/basketball/australia/nbl/',
+  });
+  assert(
+    uppercaseUrlHref === 'https://www.flashscore.com/basketball/australia/wnbl-women/',
+    `Uppercase URL has precedence when both URL and url exist (got ${uppercaseUrlHref})`,
+  );
+  const fallbackHref = getLeagueHref({
+    URL: '   ',
+    url: 'https://www.flashscore.com/basketball/australia/nbl/',
+  });
+  assert(
+    fallbackHref === 'https://www.flashscore.com/basketball/australia/nbl/',
+    `Whitespace URL falls back to url key (got ${fallbackHref})`,
+  );
 }
 
 async function testFilterSeasonEntries() {

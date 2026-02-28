@@ -51,9 +51,19 @@ export const filterSeasonEntries = (entries) => {
     });
 };
 
+const getFirstValue = (row, keys) => {
+  for (const key of keys) {
+    const value = row?.[key];
+    if (value !== undefined && value !== null && String(value).trim()) {
+      return value;
+    }
+  }
+  return '';
+};
+
 export const getLeagueHref = (row) => {
   if (!row || typeof row !== 'object') return '';
-  const direct = row.leagueHref || row.leaguehref || row.href || row.link || row.url || row.URL || '';
+  const direct = getFirstValue(row, ['leagueHref', 'leaguehref', 'href', 'link', 'URL', 'url']);
   if (direct) return direct;
   const match = Object.entries(row).find(([key, value]) => (
     /league.*href|href|url|link/i.test(key) && String(value || '').includes('/basketball/')
@@ -132,8 +142,8 @@ const run = async () => {
       const seasons = await extractSeasons(browser, archiveUrl);
       seasons.forEach((season) => {
         output.push({
-          country: row.country || row.Country || row.país || row.País || row.pais || row.Pais || '',
-          league: row.league || row.League || row.liga || row.Liga || '',
+          country: getFirstValue(row, ['country', 'Country', 'país', 'País', 'pais', 'Pais']),
+          league: getFirstValue(row, ['league', 'League', 'liga', 'Liga']),
           leagueHref,
           archiveUrl,
           season: season.season,
