@@ -1,4 +1,4 @@
-name: Basketball Seasons + League ID (Local Only)
+name: Basketball Seasons + League ID (CSV Only)
 
 on:
   workflow_dispatch:
@@ -8,20 +8,20 @@ on:
         required: false
         default: 'basketball-data/basketball_leagues.csv'
       output:
-        description: 'Output path (without .csv) for extracted seasons CSV'
+        description: 'Output path (without .csv)'
         required: false
         default: 'src/csv/BASKETBALL_LEAGUE_SEASONS'
       enriched_output:
-        description: 'Output path (without .csv) for enriched seasons CSV (with LEAGUE_ID)'
+        description: 'Output path (without .csv)'
         required: false
         default: 'src/csv/BASKETBALL_LEAGUE_SEASONS_WITH_LEAGUE_ID'
       publish_path:
-        description: 'Destino dentro del repo basketball-data'
+        description: 'Destino en basketball-data repo'
         required: false
         default: 'basketball_league_seasons_with_league_id.csv'
 
 jobs:
-  extract-and-enrich-seasons:
+  extract-and-enrich:
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -45,14 +45,14 @@ jobs:
           fi
           git clone https://x-access-token:${TOKEN_DOCKER}@github.com/juanfranciscofernandezherreros/basketball-data.git
 
-      - name: Verify CSV source exists
+      - name: Verify CSV exists
         run: |
           if [[ ! -f "${WORKFLOW_SOURCE}" ]]; then
-            echo "CSV source not found: ${WORKFLOW_SOURCE}"
+            echo "CSV not found: ${WORKFLOW_SOURCE}"
             exit 1
           fi
 
-      - name: Set up Node.js
+      - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: '20'
@@ -61,46 +61,45 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Extract seasons from leagues
-        env:
-          CI: 'true'
+      - name: Extract seasons
         run: |
           npm run basketball:seasons -- \
             source="${WORKFLOW_SOURCE}" \
             output="${WORKFLOW_OUTPUT}"
 
-      - name: Enrich seasons CSV with LEAGUE_ID
+      - name: Enrich with new ID
         run: |
           node src/enrichLeagueSeasonsWithLeagueId.js \
             leaguesSource="${WORKFLOW_SOURCE}" \
             seasonsSource="${WORKFLOW_OUTPUT}.csv" \
             output="${WORKFLOW_ENRICHED_OUTPUT}"
 
-      - name: Upload enriched CSV artifact
+      - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: basketball-league-seasons-with-league-id-csv
+          name: basketball-league-seasons-with-league-id
           path: ${{ env.WORKFLOW_ENRICHED_OUTPUT }}.csv
-          if-no-files-found: error
 
-      - name: Push enriched CSV to basketball-data repository
+      - name: Push result to basketball-data repo
         env:
           TOKEN_DOCKER: ${{ secrets.TOKEN_DOCKER }}
         run: |
           set -e
-          TARGET_PATH="${{ github.event.inputs.publish_path || 'basketball_league_seasons_with_league_id.csv' }}"
 
-          mkdir -p "basketball-data/$(dirname "${TARGET_PATH}")"
-          cp "${WORKFLOW_ENRICHED_OUTPUT}.csv" "basketball-data/${TARGET_PATH}"
+          TARGET="${{ github.event.inputs.publish_path || 'basketball_league_seasons_with_league_id.csv' }}"
+
+          mkdir -p "basketball-data/$(dirname "$TARGET")"
+          cp "${WORKFLOW_ENRICHED_OUTPUT}.csv" "basketball-data/$TARGET"
 
           git -C basketball-data config user.name "Juan Francisco"
           git -C basketball-data config user.email "juanfranciscofernandezherreros@gmail.com"
-          git -C basketball-data add "${TARGET_PATH}"
+
+          git -C basketball-data add "$TARGET"
 
           if git -C basketball-data diff --cached --quiet; then
-            echo "No changes detected in ${TARGET_PATH}"
+            echo "No changes."
             exit 0
           fi
 
-          git -C basketball-data commit -m "Update seasons with LEAGUE_ID $(date -u +%Y-%m-%d) [skip ci]"
+          git -C basketball-data commit -m "Update seasons with composed ID $(date -u +%Y-%m-%d) [skip ci]"
           git -C basketball-data push origin HEAD:master
