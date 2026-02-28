@@ -71,6 +71,12 @@ export const getLeagueHref = (row) => {
   return match ? match[1] : '';
 };
 
+export const isCountryMatch = (rowCountry, countryFilter) => {
+  const filter = String(countryFilter || '').trim().toLowerCase();
+  if (!filter || filter === 'all') return true;
+  return String(rowCountry || '').trim().toLowerCase() === filter;
+};
+
 const parseCsvFromReadable = (readable) => new Promise((resolve, reject) => {
   const rows = [];
   readable
@@ -116,11 +122,13 @@ const run = async () => {
   const args = {
     source: DEFAULT_SOURCE,
     output: '',
+    country: 'all',
   };
 
   process.argv.slice(2).forEach((arg) => {
     if (arg.startsWith('source=')) args.source = arg.split('source=')[1];
     if (arg.startsWith('output=')) args.output = arg.split('output=')[1];
+    if (arg.startsWith('country=')) args.country = arg.split('country=')[1];
   });
 
   const rows = await readLeagueRows(args.source);
@@ -134,6 +142,8 @@ const run = async () => {
   try {
     const output = [];
     for (const row of rows) {
+      const country = getFirstValue(row, ['country', 'Country', 'país', 'País', 'pais', 'Pais']);
+      if (!isCountryMatch(country, args.country)) continue;
       const leagueHref = getLeagueHref(row);
       if (!leagueHref) continue;
       const archiveUrl = buildArchiveUrl(leagueHref);
@@ -142,7 +152,7 @@ const run = async () => {
       const seasons = await extractSeasons(browser, archiveUrl);
       seasons.forEach((season) => {
         output.push({
-          country: getFirstValue(row, ['country', 'Country', 'país', 'País', 'pais', 'Pais']),
+          country,
           league: getFirstValue(row, ['league', 'League', 'liga', 'Liga']),
           leagueHref,
           archiveUrl,

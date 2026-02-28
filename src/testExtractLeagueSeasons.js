@@ -1,4 +1,4 @@
-import { buildArchiveUrl, filterSeasonEntries, getLeagueHref, resolveSourceUrl } from './extractLeagueSeasons.js';
+import { buildArchiveUrl, filterSeasonEntries, getLeagueHref, isCountryMatch, resolveSourceUrl } from './extractLeagueSeasons.js';
 
 let passed = 0;
 let failed = 0;
@@ -74,12 +74,21 @@ async function testFilterSeasonEntries() {
   assert(rows[1].seasonHref.includes('2023-2024'), 'Second season URL is preserved');
 }
 
+async function testIsCountryMatch() {
+  console.log('\n--- Test: isCountryMatch handles optional country filter ---');
+  assert(isCountryMatch('Spain', '') === true, 'Empty filter allows all countries');
+  assert(isCountryMatch('Spain', 'all') === true, 'all filter allows all countries');
+  assert(isCountryMatch('Spain', 'spain') === true, 'Country filter is case-insensitive');
+  assert(isCountryMatch('Spain', 'france') === false, 'Different country is filtered out');
+}
+
 (async () => {
   console.log('=== Extract League Seasons Tests ===');
   await testResolveSourceUrl();
   await testBuildArchiveUrl();
   await testGetLeagueHrefFromUrlColumn();
   await testFilterSeasonEntries();
+  await testIsCountryMatch();
 
   console.log(`\n=== Results: ${passed} passed, ${failed} failed ===`);
   if (failed > 0) process.exit(1);
