@@ -20,6 +20,8 @@ jobs:
     env:
       WORKFLOW_SOURCE: ${{ github.event.inputs.source || 'basketball-data/basketball_leagues.csv' }}
       WORKFLOW_OUTPUT: ${{ github.event.inputs.output || 'src/csv/BASKETBALL_LEAGUE_SEASONS' }}
+      BASKETBALL_DATA_SOURCE_PREFIX: 'https://github.com/juanfranciscofernandezherreros/basketball-data/'
+      BASKETBALL_DATA_RAW_PREFIX: 'https://raw.githubusercontent.com/juanfranciscofernandezherreros/basketball-data/'
 
     steps:
       - name: Checkout repository
@@ -95,10 +97,22 @@ jobs:
         env:
           TOKEN_DOCKER: ${{ secrets.TOKEN_DOCKER }}
         run: |
-          if [[ "${WORKFLOW_SOURCE}" == *"github.com/juanfranciscofernandezherreros/basketball-data"* ]] && [[ -n "${TOKEN_DOCKER}" ]]; then
-            curl -fL -H "Authorization: token ${TOKEN_DOCKER}" "${WORKFLOW_SOURCE}" -o basketball_leagues.csv
+          DOWNLOAD_URL="${WORKFLOW_SOURCE}"
+          if [[ "${DOWNLOAD_URL}" =~ ^https://github\.com/([^/]+)/([^/]+)/blob/([^/]+)/(.*)$ ]]; then
+            DOWNLOAD_URL="https://raw.githubusercontent.com/${BASH_REMATCH[1]}/${BASH_REMATCH[2]}/${BASH_REMATCH[3]}/${BASH_REMATCH[4]}"
+          fi
+
+          if [[ "${WORKFLOW_SOURCE}" == "${BASKETBALL_DATA_SOURCE_PREFIX}"* ]] || [[ "${DOWNLOAD_URL}" == "${BASKETBALL_DATA_RAW_PREFIX}"* ]]; then
+            if [[ -z "${TOKEN_DOCKER}" ]]; then
+              echo "TOKEN_DOCKER secret is required for this source URL."
+              exit 1
+            fi
+            AUTH_CONFIG_FILE="$(mktemp)"
+            trap 'rm -f "${AUTH_CONFIG_FILE}"' EXIT
+            printf 'header = "Authorization: token %s"\n' "${TOKEN_DOCKER}" > "${AUTH_CONFIG_FILE}"
+            curl -fL --config "${AUTH_CONFIG_FILE}" "${DOWNLOAD_URL}" -o basketball_leagues.csv
           else
-            curl -fL "${WORKFLOW_SOURCE}" -o basketball_leagues.csv
+            curl -fL "${DOWNLOAD_URL}" -o basketball_leagues.csv
           fi
 
       - name: Set local source path
@@ -113,8 +127,12 @@ jobs:
       - name: Verify CSV source access
         run: |
           SOURCE_PATH="${{ steps.set_source.outputs.source_path }}"
+          if [[ ! -e "${SOURCE_PATH}" ]]; then
+            echo "CSV source does not exist: ${SOURCE_PATH}"
+            exit 1
+          fi
           if [[ ! -s "${SOURCE_PATH}" ]]; then
-            echo "CSV source is not accessible or is empty: ${SOURCE_PATH}"
+            echo "CSV source is empty: ${SOURCE_PATH}"
             exit 1
           fi
           echo "CSV source is accessible: ${SOURCE_PATH}"
