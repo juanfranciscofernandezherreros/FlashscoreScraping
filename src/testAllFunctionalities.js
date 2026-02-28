@@ -15,7 +15,7 @@ import {
 } from './csvGenerator.js';
 import { formatFecha } from './fecha.js';
 import { BASE_URL, BASKETBALL_URL } from './constants/index.js';
-import { getStatsMatchButtonXPath } from './utils/index.js';
+import { getStatsMatchButtonXPath, getStatsMatchPeriodCandidates } from './utils/index.js';
 
 const TEST_OUTPUT_DIR = path.join(process.cwd(), 'src', 'csv', 'test_all');
 const FILE_WRITE_DELAY_MS = 500;
@@ -54,6 +54,11 @@ function testConstants() {
   assert(
     getStatsMatchButtonXPath(4) === '//*[@id="detail"]/div[4]/div[1]/div/a[5]/button',
     'Stats match xpath maps index 4 to a[5]/button'
+  );
+  const overtimeCandidates = getStatsMatchPeriodCandidates(4);
+  assert(
+    overtimeCandidates.includes('OT'),
+    'Stats match fallback candidates for index 4 include OT'
   );
 }
 
