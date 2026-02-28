@@ -6,11 +6,11 @@ on:
       start_year:
         description: 'First season start year'
         required: false
-        default: '2018'
+        default: '2023'
       end_year:
         description: 'Last season start year'
         required: false
-        default: '2020'
+        default: '2024'
 
 jobs:
   generate-results:
