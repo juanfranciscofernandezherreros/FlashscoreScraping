@@ -1,4 +1,4 @@
-import { buildArchiveUrl, filterSeasonEntries, resolveSourceUrl } from './extractLeagueSeasons.js';
+import { buildArchiveUrl, filterSeasonEntries, getLeagueHref, resolveSourceUrl } from './extractLeagueSeasons.js';
 
 let passed = 0;
 let failed = 0;
@@ -35,6 +35,15 @@ async function testBuildArchiveUrl() {
   );
 }
 
+async function testGetLeagueHrefFromUrlColumn() {
+  console.log('\n--- Test: getLeagueHref reads URL column ---');
+  const href = getLeagueHref({ ID: '3.1', País: 'Australia', Liga: 'NBL', URL: 'https://www.flashscore.com/basketball/australia/nbl/' });
+  assert(
+    href === 'https://www.flashscore.com/basketball/australia/nbl/',
+    `URL column is detected as league href (got ${href})`,
+  );
+}
+
 async function testFilterSeasonEntries() {
   console.log('\n--- Test: filterSeasonEntries keeps only valid unique seasons ---');
   const rows = filterSeasonEntries([
@@ -53,6 +62,7 @@ async function testFilterSeasonEntries() {
   console.log('=== Extract League Seasons Tests ===');
   await testResolveSourceUrl();
   await testBuildArchiveUrl();
+  await testGetLeagueHrefFromUrlColumn();
   await testFilterSeasonEntries();
 
   console.log(`\n=== Results: ${passed} passed, ${failed} failed ===`);

@@ -51,9 +51,9 @@ export const filterSeasonEntries = (entries) => {
     });
 };
 
-const getLeagueHref = (row) => {
+export const getLeagueHref = (row) => {
   if (!row || typeof row !== 'object') return '';
-  const direct = row.leagueHref || row.leaguehref || row.href || row.link || '';
+  const direct = row.leagueHref || row.leaguehref || row.href || row.link || row.url || row.URL || '';
   if (direct) return direct;
   const match = Object.entries(row).find(([key, value]) => (
     /league.*href|href|url|link/i.test(key) && String(value || '').includes('/basketball/')
@@ -128,11 +128,12 @@ const run = async () => {
       if (!leagueHref) continue;
       const archiveUrl = buildArchiveUrl(leagueHref);
       if (!archiveUrl) continue;
+      console.log(`Processing archive URL: ${archiveUrl}`);
       const seasons = await extractSeasons(browser, archiveUrl);
       seasons.forEach((season) => {
         output.push({
-          country: row.country || '',
-          league: row.league || '',
+          country: row.country || row.Country || row.país || row.País || row.pais || row.Pais || '',
+          league: row.league || row.League || row.liga || row.Liga || '',
           leagueHref,
           archiveUrl,
           season: season.season,
