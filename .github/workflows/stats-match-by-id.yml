@@ -70,7 +70,7 @@ jobs:
             libxtst6 \
             xdg-utils
 
-      - name: Scrape match stats
+      - name: Scrape match stats (open URL + click period tabs)
         env:
           IDS: ${{ github.event.inputs.ids }}
           COUNTRY: ${{ github.event.inputs.country }}

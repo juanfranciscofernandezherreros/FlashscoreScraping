@@ -73,3 +73,10 @@ npm run basketball:seasons
 # Optional: set source and output
 node src/extractLeagueSeasons.js source=https://raw.githubusercontent.com/juanfranciscofernandezherreros/basketball-data/master/basketball_leagues.csv output=src/csv/BASKETBALL_LEAGUE_SEASONS
 
+## includeStatsMatch step by step
+
+When `includeStatsMatch=true` is used, the scraper loop (`playerIndex` from `0` to `4`) calls `getStatsMatch` once per period. In each call it:
+1. Opens `https://www.flashscore.com/match/{matchId}/#/match-summary/match-statistics`
+2. Clicks the period button for that iteration with XPath `//*[@id="detail"]/div[4]/div[1]/div/a[{n}]/button`, where `{n}` goes from `1` to `5` (`playerIndex` from `0` to `4`, e.g. `a[1]/button` first and `a[5]/button` last)
+3. Extracts the stats table after each click and stores one CSV per period (`STATS_MATCH_*_0.csv` to `STATS_MATCH_*_4.csv`)
+
