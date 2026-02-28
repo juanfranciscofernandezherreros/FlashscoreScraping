@@ -236,12 +236,24 @@ export const getStatsPlayer = async (browser, matchId) => {
   return playerData;
 };
 
+export const getStatsMatchButtonXPath = (playerIndex) =>
+  `//*[@id="detail"]/div[4]/div[1]/div/a[${playerIndex + 1}]/button`;
+
 export const getStatsMatch = async (browser, matchId, playerIndex) => {
   const page = await browser.newPage();    
-  const url = `${BASE_URL}/match/${matchId}/#/match-summary/match-statistics/${playerIndex}`;
+  const url = `${BASE_URL}/match/${matchId}/#/match-summary/match-statistics`;
   console.log(`Opening URL: ${url}`);
   
   await page.goto(url, { waitUntil: 'networkidle2' });
+  const periodButtonXPath = getStatsMatchButtonXPath(playerIndex);
+  await page.waitForFunction((xpath) => {
+    const node = document.evaluate(xpath, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
+    return !!node;
+  }, { timeout: 5000 }, periodButtonXPath);
+  await page.evaluate((xpath) => {
+    const node = document.evaluate(xpath, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
+    if (node) node.click();
+  }, periodButtonXPath);
   await page.waitForSelector('._value_1jbkc_4._homeValue_1jbkc_9', { timeout: 5000 });
   await page.waitForSelector('._value_1jbkc_4._awayValue_1jbkc_13', { timeout: 5000 });
   await page.waitForSelector('._category_1ague_4', { timeout: 5000 });
