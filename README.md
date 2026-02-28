@@ -69,5 +69,5 @@ npm run basketball:detailed
 npm run basketball:seasons
 
 # Optional: set source and output
-node src/extractLeagueSeasons.js source=https://github.com/juanfranciscofernandezherreros/basketball-data/blob/master/basketball_leagues.csv output=src/csv/BASKETBALL_LEAGUE_SEASONS
+node src/extractLeagueSeasons.js source=https://raw.githubusercontent.com/juanfranciscofernandezherreros/basketball-data/master/basketball_leagues.csv output=src/csv/BASKETBALL_LEAGUE_SEASONS
 

@@ -6,7 +6,7 @@ on:
       source:
         description: 'CSV source (URL raw/blob or local path in repo)'
         required: false
-        default: 'https://github.com/juanfranciscofernandezherreros/basketball-data/blob/master/basketball_leagues.csv'
+        default: 'https://raw.githubusercontent.com/juanfranciscofernandezherreros/basketball-data/master/basketball_leagues.csv'
       output:
         description: 'Output file path without .csv extension'
         required: false
@@ -15,6 +15,8 @@ on:
 jobs:
   extract-seasons:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
 
     steps:
       - name: Checkout repository
