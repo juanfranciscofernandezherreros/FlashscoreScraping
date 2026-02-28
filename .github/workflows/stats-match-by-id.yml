@@ -1,0 +1,104 @@
+name: Match Stats by ID
+
+on:
+  workflow_dispatch:
+    inputs:
+      ids:
+        description: 'Comma-separated match ID(s) (e.g. g_3_Uix0vJJK)'
+        required: true
+        default: 'g_3_Uix0vJJK'
+      country:
+        description: 'Country (optional, used for output folder naming)'
+        required: false
+        default: ''
+      league:
+        description: 'League (optional, used for output folder naming)'
+        required: false
+        default: ''
+
+jobs:
+  scrape-stats-match:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Chromium dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            fonts-liberation \
+            libasound2t64 \
+            libatk-bridge2.0-0 \
+            libatk1.0-0 \
+            libcairo2 \
+            libcups2 \
+            libdbus-1-3 \
+            libexpat1 \
+            libfontconfig1 \
+            libgbm1 \
+            libglib2.0-0 \
+            libgtk-3-0 \
+            libnspr4 \
+            libnss3 \
+            libpango-1.0-0 \
+            libpangocairo-1.0-0 \
+            libx11-6 \
+            libx11-xcb1 \
+            libxcb1 \
+            libxcomposite1 \
+            libxcursor1 \
+            libxdamage1 \
+            libxext6 \
+            libxfixes3 \
+            libxi6 \
+            libxrandr2 \
+            libxrender1 \
+            libxss1 \
+            libxtst6 \
+            xdg-utils
+
+      - name: Scrape match stats
+        env:
+          IDS: ${{ github.event.inputs.ids }}
+          COUNTRY: ${{ github.event.inputs.country }}
+          LEAGUE: ${{ github.event.inputs.league }}
+        run: |
+          npm run start -- \
+            ids="$IDS" \
+            country="$COUNTRY" \
+            league="$LEAGUE" \
+            includeStatsMatch=true headless
+
+      - name: Push CSV to basketball-data
+        env:
+          TOKEN_DOCKER: ${{ secrets.TOKEN_DOCKER }}
+          IDS: ${{ github.event.inputs.ids }}
+        run: |
+          set -e
+
+          git clone https://x-access-token:${TOKEN_DOCKER}@github.com/juanfranciscofernandezherreros/basketball-data.git
+          mkdir -p basketball-data/results
+          rsync -av src/csv/results/ basketball-data/results/
+
+          cd basketball-data
+          git config user.name "Juan Francisco"
+          git config user.email "juanfranciscofernandezherreros@gmail.com"
+
+          git add results/
+          if git diff --cached --quiet; then exit 0; fi
+
+          git commit -m "Update match stats ($IDS) $(date -u) [skip ci]"
+          git push origin HEAD:master
