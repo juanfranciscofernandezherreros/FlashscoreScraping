@@ -1,4 +1,4 @@
-name: Enrich Basketball Seasons (CSV Cross Only)
+name: Enrich Basketball Seasons (CSV Only)
 
 on:
   workflow_dispatch:
@@ -10,61 +10,43 @@ jobs:
       contents: write
 
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Clone basketball-data repo
+      - name: Clone basketball-data
         env:
           TOKEN_DOCKER: ${{ secrets.TOKEN_DOCKER }}
         run: |
-          if [[ -z "${TOKEN_DOCKER}" ]]; then
-            echo "TOKEN_DOCKER secret is required."
-            exit 1
-          fi
           git clone https://x-access-token:${TOKEN_DOCKER}@github.com/juanfranciscofernandezherreros/basketball-data.git
 
-      - name: Verify required CSVs exist
+      - name: Verify CSVs
         run: |
-          if [[ ! -f "basketball-data/basketball_leagues.csv" ]]; then
-            echo "Missing basketball_leagues.csv"
-            exit 1
-          fi
+          test -f basketball-data/basketball_leagues.csv
+          test -f src/csv/BASKETBALL_LEAGUE_SEASONS.csv
 
-          if [[ ! -f "src/csv/BASKETBALL_LEAGUE_SEASONS.csv" ]]; then
-            echo "Missing BASKETBALL_LEAGUE_SEASONS.csv"
-            exit 1
-          fi
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: '20'
 
-      - name: Run enrich script
+      - name: Run enrich
         run: |
           node src/enrichLeagueSeasonsWithLeagueId.js \
             leaguesSource="basketball-data/basketball_leagues.csv" \
             seasonsSource="src/csv/BASKETBALL_LEAGUE_SEASONS.csv" \
             output="src/csv/BASKETBALL_LEAGUE_SEASONS_WITH_LEAGUE_ID"
 
-      - name: Commit result to basketball-data
+      - name: Push result
         env:
           TOKEN_DOCKER: ${{ secrets.TOKEN_DOCKER }}
         run: |
-          set -e
-
           cp src/csv/BASKETBALL_LEAGUE_SEASONS_WITH_LEAGUE_ID.csv \
              basketball-data/basketball_league_seasons_with_league_id.csv
 
-          git -C basketball-data config user.name "Juan Francisco"
-          git -C basketball-data config user.email "juanfranciscofernandezherreros@gmail.com"
+          cd basketball-data
+          git config user.name "Juan Francisco"
+          git config user.email "juanfranciscofernandezherreros@gmail.com"
 
-          git -C basketball-data add basketball_league_seasons_with_league_id.csv
+          git add basketball_league_seasons_with_league_id.csv
+          if git diff --cached --quiet; then exit 0; fi
 
-          if git -C basketball-data diff --cached --quiet; then
-            echo "No changes."
-            exit 0
-          fi
-
-          git -C basketball-data commit -m "Update enriched seasons $(date -u +%Y-%m-%d) [skip ci]"
-          git -C basketball-data push origin HEAD:master
+          git commit -m "Update enriched seasons $(date -u) [skip ci]"
+          git push origin HEAD:master
