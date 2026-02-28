@@ -2,6 +2,11 @@ name: Basketball League Seasons Extraction
 
 on:
   workflow_dispatch:
+    inputs:
+      country:
+        description: 'Country filter (optional, default: all)'
+        required: false
+        default: 'all'
 
 jobs:
   extract-seasons:
@@ -56,7 +61,24 @@ jobs:
         run: |
           npm run basketball:seasons -- \
             source="basketball-data/basketball_leagues.csv" \
-            output="src/csv/BASKETBALL_LEAGUE_SEASONS"
+            output="src/csv/BASKETBALL_LEAGUE_SEASONS" \
+            country="${{ github.event.inputs.country || 'all' }}"
+
+      - name: Push CSV to basketball-data
+        env:
+          TOKEN_DOCKER: ${{ secrets.TOKEN_DOCKER }}
+        run: |
+          cp src/csv/BASKETBALL_LEAGUE_SEASONS.csv basketball-data/basketball_league_seasons.csv
+
+          cd basketball-data
+          git config user.name "Juan Francisco"
+          git config user.email "juanfranciscofernandezherreros@gmail.com"
+
+          git add basketball_league_seasons.csv
+          if git diff --cached --quiet; then exit 0; fi
+
+          git commit -m "Update basketball league seasons $(date -u) [skip ci]"
+          git push origin HEAD:master
 
       - uses: actions/upload-artifact@v4
         with:
