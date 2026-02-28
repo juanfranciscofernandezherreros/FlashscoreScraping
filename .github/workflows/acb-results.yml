@@ -4,34 +4,26 @@ on:
   workflow_dispatch:
     inputs:
       start_year:
-        description: 'First season start year (e.g. 2000 for 2000-2001)'
+        description: 'First season start year'
         required: false
         default: '2018'
       end_year:
-        description: 'Last season start year (e.g. 2024 for 2024-2025)'
+        description: 'Last season start year'
         required: false
         default: '2020'
 
 jobs:
   generate-results:
     runs-on: ubuntu-latest
-
     permissions:
       contents: write
 
     steps:
-
-      # -----------------------------
-      # 1️⃣ Checkout repository
-      # -----------------------------
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      # -----------------------------
-      # 2️⃣ Node setup + cache
-      # -----------------------------
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
@@ -41,9 +33,6 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      # -----------------------------
-      # 3️⃣ Chromium dependencies (Ubuntu 24 compatible)
-      # -----------------------------
       - name: Install Chromium dependencies
         run: |
           sudo apt-get update
@@ -79,70 +68,41 @@ jobs:
             libxtst6 \
             xdg-utils
 
-      # -----------------------------
-      # 4️⃣ Generate ACB results
-      # -----------------------------
       - name: Generate ACB results
         run: |
           set -e
 
           COUNTRY="spain"
-          COMPETITION_BASE="acb"
+          BASE="acb"
 
-          # Si no se pasan valores manualmente, usa defaults del workflow_dispatch
           START_YEAR="${{ github.event.inputs.start_year }}"
           END_YEAR="${{ github.event.inputs.end_year }}"
-
-          echo "Generating seasons from ${START_YEAR} to ${END_YEAR}"
 
           for YEAR in $(seq "$START_YEAR" "$END_YEAR"); do
             NEXT=$((YEAR + 1))
             SEASON="${YEAR}-${NEXT}"
-            COMPETITION="${COMPETITION_BASE}-${SEASON}"
+            COMP="${BASE}-${SEASON}"
 
-            echo "Generating ${SEASON}..."
-            npm run start -- action=results country=${COUNTRY} league=${COMPETITION} includeMatchData=false
+            echo "Generating ${SEASON}"
+            npm run start -- action=results country=${COUNTRY} league=${COMP} includeMatchData=false
           done
 
-          echo "Generation complete"
-
-      # -----------------------------
-      # 5️⃣ Debug generated files
-      # -----------------------------
-      - name: Debug generated files
-        run: |
-          echo "Contenido de src/csv/results:"
-          ls -R src/csv/results || echo "No results folder found"
-
-      # -----------------------------
-      # 6️⃣ Push CSV to basketball-data repository
-      # -----------------------------
-      - name: Push CSV to basketball-data repository
+      - name: Push CSV to basketball-data
         env:
           TOKEN_DOCKER: ${{ secrets.TOKEN_DOCKER }}
         run: |
           set -e
 
-          git config --global user.name "Juan Francisco"
-          git config --global user.email "juanfranciscofernandezherreros@gmail.com"
-
-          echo "Cloning basketball-data repository..."
           git clone https://x-access-token:${TOKEN_DOCKER}@github.com/juanfranciscofernandezherreros/basketball-data.git
-
-          echo "Syncing CSV files..."
           mkdir -p basketball-data/results
           rsync -av --delete src/csv/results/ basketball-data/results/
 
           cd basketball-data
+          git config user.name "Juan Francisco"
+          git config user.email "juanfranciscofernandezherreros@gmail.com"
 
           git add results/
-
-          if git diff --cached --quiet; then
-            echo "No changes detected"
-            exit 0
-          fi
+          if git diff --cached --quiet; then exit 0; fi
 
           git commit -m "Update ACB results $(date -u) [skip ci]"
           git push origin HEAD:master
-
-          echo "Push completed successfully"
