@@ -19,6 +19,7 @@ jobs:
       contents: read
     env:
       WORKFLOW_SOURCE: ${{ github.event.inputs.source || 'basketball-data/basketball_leagues.csv' }}
+      WORKFLOW_OUTPUT: ${{ github.event.inputs.output || 'src/csv/BASKETBALL_LEAGUE_SEASONS' }}
 
     steps:
       - name: Checkout repository
@@ -109,11 +110,11 @@ jobs:
         run: |
           npm run basketball:seasons -- \
             source="${{ steps.set_source.outputs.source_path }}" \
-            output="${{ github.event.inputs.output }}"
+            output="${WORKFLOW_OUTPUT}"
 
       - name: Upload generated CSV artifact
         uses: actions/upload-artifact@v4
         with:
           name: basketball-league-seasons-csv
-          path: ${{ github.event.inputs.output }}.csv
+          path: ${{ env.WORKFLOW_OUTPUT }}.csv
           if-no-files-found: error
