@@ -250,10 +250,15 @@ export const getStatsMatch = async (browser, matchId, playerIndex) => {
     const node = document.evaluate(xpath, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
     return !!node;
   }, { timeout: 5000 }, periodButtonXPath);
-  await page.evaluate((xpath) => {
+  const clicked = await page.evaluate((xpath) => {
     const node = document.evaluate(xpath, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
-    if (node) node.click();
+    if (!node) return false;
+    node.click();
+    return true;
   }, periodButtonXPath);
+  if (!clicked) {
+    throw new Error(`Could not click stats match period button for index ${playerIndex}`);
+  }
   await page.waitForSelector('._value_1jbkc_4._homeValue_1jbkc_9', { timeout: 5000 });
   await page.waitForSelector('._value_1jbkc_4._awayValue_1jbkc_13', { timeout: 5000 });
   await page.waitForSelector('._category_1ague_4', { timeout: 5000 });
