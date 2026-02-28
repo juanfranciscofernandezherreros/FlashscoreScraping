@@ -66,11 +66,36 @@ jobs:
             libxtst6 \
             xdg-utils
 
+      - name: Determine source type
+        id: source_check
+        run: |
+          if [[ "${{ github.event.inputs.source }}" == http* ]]; then
+            echo "is_url=true" >> $GITHUB_OUTPUT
+          else
+            echo "is_url=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Download source CSV (if URL)
+        if: steps.source_check.outputs.is_url == 'true'
+        run: |
+          curl -L "${{ github.event.inputs.source }}" -o basketball_leagues.csv
+
+      - name: Set local source path
+        id: set_source
+        run: |
+          if [[ "${{ steps.source_check.outputs.is_url }}" == "true" ]]; then
+            echo "source_path=basketball_leagues.csv" >> $GITHUB_OUTPUT
+          else
+            echo "source_path=${{ github.event.inputs.source }}" >> $GITHUB_OUTPUT
+          fi
+
       - name: Extract seasons
         env:
           CI: 'true'
         run: |
-          npm run basketball:seasons -- source="${{ github.event.inputs.source }}" output="${{ github.event.inputs.output }}"
+          npm run basketball:seasons -- \
+            source="${{ steps.set_source.outputs.source_path }}" \
+            output="${{ github.event.inputs.output }}"
 
       - name: Upload generated CSV artifact
         uses: actions/upload-artifact@v4
