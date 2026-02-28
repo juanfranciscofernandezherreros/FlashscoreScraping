@@ -239,6 +239,17 @@ export const getStatsPlayer = async (browser, matchId) => {
 export const getStatsMatchButtonXPath = (playerIndex) =>
   `//*[@id="detail"]/div[4]/div[1]/div/a[${playerIndex + 1}]/button`;
 
+export const getStatsMatchPeriodCandidates = (playerIndex) => {
+  const labelsByIndex = [
+    ['1ST QUARTER', 'Q1', '1Q'],
+    ['2ND QUARTER', 'Q2', '2Q'],
+    ['3RD QUARTER', 'Q3', '3Q'],
+    ['4TH QUARTER', 'Q4', '4Q'],
+    ['OVERTIME', 'OT'],
+  ];
+  return labelsByIndex[playerIndex] || [];
+};
+
 export const getStatsMatch = async (browser, matchId, playerIndex) => {
   const page = await browser.newPage();    
   const url = `${BASE_URL}/match/${matchId}/#/match-summary/match-statistics`;
@@ -250,12 +261,29 @@ export const getStatsMatch = async (browser, matchId, playerIndex) => {
     const node = document.evaluate(xpath, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
     return !!node;
   }, { timeout: 5000 }, periodButtonXPath);
-  const clicked = await page.evaluate((xpath) => {
+  let clicked = await page.evaluate((xpath) => {
     const node = document.evaluate(xpath, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
     if (!node) return false;
     node.click();
     return true;
   }, periodButtonXPath);
+  if (!clicked) {
+    const candidateLabels = getStatsMatchPeriodCandidates(playerIndex);
+    clicked = await page.evaluate((labels) => {
+      if (!labels || labels.length === 0) return false;
+      const normalize = (value) => (value || '').replace(/\s+/g, ' ').trim().toUpperCase();
+      const candidateSet = new Set(labels.map((label) => normalize(label)));
+      const buttons = Array.from(document.querySelectorAll('#detail button'));
+      const button = buttons.find((currentButton) => {
+        const text = normalize(currentButton.textContent);
+        const title = normalize(currentButton.getAttribute('title'));
+        return candidateSet.has(text) || candidateSet.has(title);
+      });
+      if (!button) return false;
+      button.click();
+      return true;
+    }, candidateLabels);
+  }
   if (!clicked) {
     throw new Error(`Could not click stats match period button for index ${playerIndex}`);
   }
