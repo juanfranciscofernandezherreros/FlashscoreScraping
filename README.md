@@ -68,3 +68,6 @@ npm run basketball:detailed
 # Extract all seasons from leagues CSV (reads basketball-data CSV by default)
 npm run basketball:seasons
 
+# Optional: set source and output
+node src/extractLeagueSeasons.js source=https://github.com/juanfranciscofernandezherreros/basketball-data/blob/master/basketball_leagues.csv output=src/csv/BASKETBALL_LEAGUE_SEASONS
+
