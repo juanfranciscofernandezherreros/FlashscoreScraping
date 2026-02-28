@@ -6,7 +6,7 @@ on:
       source:
         description: 'CSV source (URL raw/blob or local path in repo)'
         required: false
-        default: 'https://raw.githubusercontent.com/juanfranciscofernandezherreros/basketball-data/master/basketball_leagues.csv'
+        default: 'basketball-data/basketball_leagues.csv'
       output:
         description: 'Output file path without .csv extension'
         required: false
@@ -65,6 +65,14 @@ jobs:
             libxss1 \
             libxtst6 \
             xdg-utils
+
+      - name: Clone basketball-data repository (default source)
+        env:
+          TOKEN_DOCKER: ${{ secrets.TOKEN_DOCKER }}
+        run: |
+          if [[ "${{ github.event.inputs.source }}" == "basketball-data/"* ]]; then
+            git clone https://x-access-token:${TOKEN_DOCKER}@github.com/juanfranciscofernandezherreros/basketball-data.git
+          fi
 
       - name: Determine source type
         id: source_check
