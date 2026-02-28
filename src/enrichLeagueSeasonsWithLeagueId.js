@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import { pathToFileURL } from 'url';
 import csv from 'csv-parser';
 
 const getFirstValue = (row, keys) => {
@@ -99,7 +100,7 @@ const run = async () => {
   console.log(`Enriched CSV generated: ${writtenPath}`);
 };
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (import.meta.url === pathToFileURL(process.argv[1]).href) {
   run().catch((error) => {
     console.error('Error enriching seasons CSV with LEAGUE_ID:', error.message);
     process.exit(1);

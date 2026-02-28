@@ -181,5 +181,5 @@ jobs:
             exit 0
           fi
 
-          git -C basketball-data commit -m "Update seasons with LEAGUE_ID $(date -u) [skip ci]"
+          git -C basketball-data commit -m "Update seasons with LEAGUE_ID $(date -u +%Y-%m-%d) [skip ci]"
           git -C basketball-data push origin HEAD:master
