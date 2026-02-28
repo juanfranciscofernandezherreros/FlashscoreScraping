@@ -6,7 +6,7 @@ on:
       source:
         description: 'CSV source (URL raw/blob or local path in repo)'
         required: false
-        default: 'https://raw.githubusercontent.com/juanfranciscofernandezherreros/basketball-data/master/basketball_leagues.csv'
+        default: 'basketball-data/basketball_leagues.csv'
       output:
         description: 'Output file path without .csv extension'
         required: false
@@ -17,6 +17,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+    env:
+      WORKFLOW_SOURCE: ${{ github.event.inputs.source || 'basketball-data/basketball_leagues.csv' }}
 
     steps:
       - name: Checkout repository
@@ -66,10 +68,22 @@ jobs:
             libxtst6 \
             xdg-utils
 
+      - name: Clone basketball-data repository (default source)
+        env:
+          TOKEN_DOCKER: ${{ secrets.TOKEN_DOCKER }}
+        run: |
+          if [[ "${WORKFLOW_SOURCE}" == "basketball-data/"* ]]; then
+            if [[ -z "${TOKEN_DOCKER}" ]]; then
+              echo "TOKEN_DOCKER secret is required when using basketball-data as source."
+              exit 1
+            fi
+            git clone https://x-access-token:${TOKEN_DOCKER}@github.com/juanfranciscofernandezherreros/basketball-data.git
+          fi
+
       - name: Determine source type
         id: source_check
         run: |
-          if [[ "${{ github.event.inputs.source }}" == http* ]]; then
+          if [[ "${WORKFLOW_SOURCE}" == http* ]]; then
             echo "is_url=true" >> $GITHUB_OUTPUT
           else
             echo "is_url=false" >> $GITHUB_OUTPUT
@@ -78,7 +92,7 @@ jobs:
       - name: Download source CSV (if URL)
         if: steps.source_check.outputs.is_url == 'true'
         run: |
-          curl -L "${{ github.event.inputs.source }}" -o basketball_leagues.csv
+          curl -L "${WORKFLOW_SOURCE}" -o basketball_leagues.csv
 
       - name: Set local source path
         id: set_source
@@ -86,7 +100,7 @@ jobs:
           if [[ "${{ steps.source_check.outputs.is_url }}" == "true" ]]; then
             echo "source_path=basketball_leagues.csv" >> $GITHUB_OUTPUT
           else
-            echo "source_path=${{ github.event.inputs.source }}" >> $GITHUB_OUTPUT
+            echo "source_path=${WORKFLOW_SOURCE}" >> $GITHUB_OUTPUT
           fi
 
       - name: Extract seasons
