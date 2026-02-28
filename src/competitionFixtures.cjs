@@ -19,10 +19,8 @@ if (kvArgs.country && kvArgs.league) {
     [country, league] = rawArgs;
 }
 
-if (!country || !league) {
-    console.error('Country and league must be specified.');
-    process.exit(1);
-}
+if (!country) country = 'France';
+if (!league) league = 'lnb';
 
 // Configura el directorio de trabajo
 const projectDir = './';
