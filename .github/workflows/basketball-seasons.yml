@@ -2,39 +2,20 @@ name: Basketball League Seasons Extraction
 
 on:
   workflow_dispatch:
-    inputs:
-      source:
-        description: 'CSV source (URL raw/blob or local path in repo)'
-        required: false
-        default: 'basketball-data/basketball_leagues.csv'
-      output:
-        description: 'Output file path without .csv extension'
-        required: false
-        default: 'src/csv/BASKETBALL_LEAGUE_SEASONS'
 
 jobs:
   extract-seasons:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    env:
-      WORKFLOW_SOURCE: ${{ github.event.inputs.source || 'basketball-data/basketball_leagues.csv' }}
-      WORKFLOW_OUTPUT: ${{ github.event.inputs.output || 'src/csv/BASKETBALL_LEAGUE_SEASONS' }}
-      BASKETBALL_DATA_SOURCE_PREFIX: 'https://github.com/juanfranciscofernandezherreros/basketball-data/'
-      BASKETBALL_DATA_RAW_PREFIX: 'https://raw.githubusercontent.com/juanfranciscofernandezherreros/basketball-data/'
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
 
-      - name: Install dependencies
-        run: npm ci
+      - run: npm ci
 
       - name: Install Chromium dependencies
         run: |
@@ -71,83 +52,13 @@ jobs:
             libxtst6 \
             xdg-utils
 
-      - name: Clone basketball-data repository (default source)
-        env:
-          TOKEN_DOCKER: ${{ secrets.TOKEN_DOCKER }}
-        run: |
-          if [[ "${WORKFLOW_SOURCE}" == "basketball-data/"* ]]; then
-            if [[ -z "${TOKEN_DOCKER}" ]]; then
-              echo "TOKEN_DOCKER secret is required when using basketball-data as source."
-              exit 1
-            fi
-            git clone https://x-access-token:${TOKEN_DOCKER}@github.com/juanfranciscofernandezherreros/basketball-data.git
-          fi
-
-      - name: Determine source type
-        id: source_check
-        run: |
-          if [[ "${WORKFLOW_SOURCE}" == http* ]]; then
-            echo "is_url=true" >> $GITHUB_OUTPUT
-          else
-            echo "is_url=false" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Download source CSV (if URL)
-        if: steps.source_check.outputs.is_url == 'true'
-        env:
-          TOKEN_DOCKER: ${{ secrets.TOKEN_DOCKER }}
-        run: |
-          DOWNLOAD_URL="${WORKFLOW_SOURCE}"
-          if [[ "${DOWNLOAD_URL}" =~ ^https://github\.com/([^/]+)/([^/]+)/blob/([^/]+)/(.*)$ ]]; then
-            DOWNLOAD_URL="https://raw.githubusercontent.com/${BASH_REMATCH[1]}/${BASH_REMATCH[2]}/${BASH_REMATCH[3]}/${BASH_REMATCH[4]}"
-          fi
-
-          if [[ "${WORKFLOW_SOURCE}" == "${BASKETBALL_DATA_SOURCE_PREFIX}"* ]] || [[ "${DOWNLOAD_URL}" == "${BASKETBALL_DATA_RAW_PREFIX}"* ]]; then
-            if [[ -z "${TOKEN_DOCKER}" ]]; then
-              echo "TOKEN_DOCKER secret is required for this source URL."
-              exit 1
-            fi
-            AUTH_CONFIG_FILE="$(mktemp)"
-            trap 'rm -f "${AUTH_CONFIG_FILE}"' EXIT
-            printf 'header = "Authorization: token %s"\n' "${TOKEN_DOCKER}" > "${AUTH_CONFIG_FILE}"
-            curl -fL --config "${AUTH_CONFIG_FILE}" "${DOWNLOAD_URL}" -o basketball_leagues.csv
-          else
-            curl -fL "${DOWNLOAD_URL}" -o basketball_leagues.csv
-          fi
-
-      - name: Set local source path
-        id: set_source
-        run: |
-          if [[ "${{ steps.source_check.outputs.is_url }}" == "true" ]]; then
-            echo "source_path=basketball_leagues.csv" >> $GITHUB_OUTPUT
-          else
-            echo "source_path=${WORKFLOW_SOURCE}" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Verify CSV source access
-        run: |
-          SOURCE_PATH="${{ steps.set_source.outputs.source_path }}"
-          if [[ ! -e "${SOURCE_PATH}" ]]; then
-            echo "CSV source does not exist: ${SOURCE_PATH}"
-            exit 1
-          fi
-          if [[ ! -s "${SOURCE_PATH}" ]]; then
-            echo "CSV source is empty: ${SOURCE_PATH}"
-            exit 1
-          fi
-          echo "CSV source is accessible: ${SOURCE_PATH}"
-
       - name: Extract seasons
-        env:
-          CI: 'true'
         run: |
           npm run basketball:seasons -- \
-            source="${{ steps.set_source.outputs.source_path }}" \
-            output="${WORKFLOW_OUTPUT}"
+            source="basketball-data/basketball_leagues.csv" \
+            output="src/csv/BASKETBALL_LEAGUE_SEASONS"
 
-      - name: Upload generated CSV artifact
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         with:
-          name: basketball-league-seasons-csv
-          path: ${{ env.WORKFLOW_OUTPUT }}.csv
-          if-no-files-found: error
+          name: basketball-league-seasons
+          path: src/csv/BASKETBALL_LEAGUE_SEASONS.csv
