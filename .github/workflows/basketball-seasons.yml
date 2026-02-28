@@ -1,0 +1,80 @@
+name: Basketball League Seasons Extraction
+
+on:
+  workflow_dispatch:
+    inputs:
+      source:
+        description: 'CSV source (URL raw/blob or local path in repo)'
+        required: false
+        default: 'https://raw.githubusercontent.com/juanfranciscofernandezherreros/basketball-data/master/basketball_leagues.csv'
+      output:
+        description: 'Output file path without .csv extension'
+        required: false
+        default: 'src/csv/BASKETBALL_LEAGUE_SEASONS'
+
+jobs:
+  extract-seasons:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Chromium dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            fonts-liberation \
+            libasound2t64 \
+            libatk-bridge2.0-0 \
+            libatk1.0-0 \
+            libcairo2 \
+            libcups2 \
+            libdbus-1-3 \
+            libexpat1 \
+            libfontconfig1 \
+            libgbm1 \
+            libglib2.0-0 \
+            libgtk-3-0 \
+            libnspr4 \
+            libnss3 \
+            libpango-1.0-0 \
+            libpangocairo-1.0-0 \
+            libx11-6 \
+            libx11-xcb1 \
+            libxcb1 \
+            libxcomposite1 \
+            libxcursor1 \
+            libxdamage1 \
+            libxext6 \
+            libxfixes3 \
+            libxi6 \
+            libxrandr2 \
+            libxrender1 \
+            libxss1 \
+            libxtst6 \
+            xdg-utils
+
+      - name: Extract seasons
+        env:
+          CI: 'true'
+        run: |
+          npm run basketball:seasons -- source="${{ github.event.inputs.source }}" output="${{ github.event.inputs.output }}"
+
+      - name: Upload generated CSV artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: basketball-league-seasons-csv
+          path: ${{ github.event.inputs.output }}.csv
+          if-no-files-found: error
