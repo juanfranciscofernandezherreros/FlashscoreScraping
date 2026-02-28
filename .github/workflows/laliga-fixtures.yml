@@ -1,0 +1,108 @@
+name: La Liga Fixtures Scraping
+
+on:
+  workflow_dispatch:
+    inputs:
+      start_year:
+        description: 'First season start year'
+        required: false
+        default: '2024'
+      end_year:
+        description: 'Last season start year'
+        required: false
+        default: '2024'
+
+jobs:
+  generate-fixtures:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Chromium dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            fonts-liberation \
+            libasound2t64 \
+            libatk-bridge2.0-0 \
+            libatk1.0-0 \
+            libcairo2 \
+            libcups2 \
+            libdbus-1-3 \
+            libexpat1 \
+            libfontconfig1 \
+            libgbm1 \
+            libglib2.0-0 \
+            libgtk-3-0 \
+            libnspr4 \
+            libnss3 \
+            libpango-1.0-0 \
+            libpangocairo-1.0-0 \
+            libx11-6 \
+            libx11-xcb1 \
+            libxcb1 \
+            libxcomposite1 \
+            libxcursor1 \
+            libxdamage1 \
+            libxext6 \
+            libxfixes3 \
+            libxi6 \
+            libxrandr2 \
+            libxrender1 \
+            libxss1 \
+            libxtst6 \
+            xdg-utils
+
+      - name: Generate La Liga fixtures
+        run: |
+          set -e
+
+          COUNTRY="spain"
+          BASE="laliga"
+
+          START_YEAR="${{ github.event.inputs.start_year || '2024' }}"
+          END_YEAR="${{ github.event.inputs.end_year || '2024' }}"
+
+          for YEAR in $(seq "$START_YEAR" "$END_YEAR"); do
+            NEXT=$((YEAR + 1))
+            SEASON="${YEAR}-${NEXT}"
+            COMP="${BASE}-${SEASON}"
+
+            echo "Generating fixtures for ${SEASON}"
+            npm run start -- action=fixtures country=${COUNTRY} league=${COMP}
+          done
+
+      - name: Push CSV to football-data
+        env:
+          TOKEN_DOCKER: ${{ secrets.TOKEN_DOCKER }}
+        run: |
+          set -e
+
+          git clone https://x-access-token:${TOKEN_DOCKER}@github.com/juanfranciscofernandezherreros/football-data.git
+          mkdir -p football-data/fixtures
+          rsync -av --delete src/csv/fixtures/ football-data/fixtures/
+
+          cd football-data
+          git config user.name "Juan Francisco"
+          git config user.email "juanfranciscofernandezherreros@gmail.com"
+
+          git add fixtures/
+          if git diff --cached --quiet; then exit 0; fi
+
+          git commit -m "Update La Liga fixtures $(date -u) [skip ci]"
+          git push origin HEAD:master
