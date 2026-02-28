@@ -92,8 +92,14 @@ jobs:
 
       - name: Download source CSV (if URL)
         if: steps.source_check.outputs.is_url == 'true'
+        env:
+          TOKEN_DOCKER: ${{ secrets.TOKEN_DOCKER }}
         run: |
-          curl -L "${WORKFLOW_SOURCE}" -o basketball_leagues.csv
+          if [[ "${WORKFLOW_SOURCE}" == *"github.com/juanfranciscofernandezherreros/basketball-data"* ]] && [[ -n "${TOKEN_DOCKER}" ]]; then
+            curl -fL -H "Authorization: token ${TOKEN_DOCKER}" "${WORKFLOW_SOURCE}" -o basketball_leagues.csv
+          else
+            curl -fL "${WORKFLOW_SOURCE}" -o basketball_leagues.csv
+          fi
 
       - name: Set local source path
         id: set_source
@@ -103,6 +109,15 @@ jobs:
           else
             echo "source_path=${WORKFLOW_SOURCE}" >> $GITHUB_OUTPUT
           fi
+
+      - name: Verify CSV source access
+        run: |
+          SOURCE_PATH="${{ steps.set_source.outputs.source_path }}"
+          if [[ ! -s "${SOURCE_PATH}" ]]; then
+            echo "CSV source is not accessible or is empty: ${SOURCE_PATH}"
+            exit 1
+          fi
+          echo "CSV source is accessible: ${SOURCE_PATH}"
 
       - name: Extract seasons
         env:
