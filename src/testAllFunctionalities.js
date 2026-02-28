@@ -284,8 +284,10 @@ async function testGenerateCSVPointByPoint() {
   const content = fs.readFileSync(csvPath, 'utf-8');
   const lines = content.trim().split('\n');
   assert(lines.length === 4, `Has 4 data rows (got ${lines.length})`);
-  assert(lines[0] === 'g_3_test123,09:53,2 - 0,2PT Field Goal,', `First row has all point-by-point fields (got ${lines[0]})`);
-  assert(lines[3] === 'g_3_test123,05:10,7 - 3,2PT Field Goal,', `Last row is correct (got ${lines[3]})`);
+  assert(lines[0] === '"g_3_test123","09:53","2 - 0","2PT Field Goal",""', `First row has all point-by-point fields (got ${lines[0]})`);
+  assert(lines[1] === '"g_3_test123","08:44","2 - 3","","3PT Field Goal"', `Second row is correct (got ${lines[1]})`);
+  assert(lines[2] === '"g_3_test123","07:20","5 - 3","3PT Field Goal",""', `Third row is correct (got ${lines[2]})`);
+  assert(lines[3] === '"g_3_test123","05:10","7 - 3","2PT Field Goal",""', `Last row is correct (got ${lines[3]})`);
 }
 
 async function testGenerateCSVPointByPointEmptyData() {

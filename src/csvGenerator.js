@@ -83,9 +83,11 @@ export function generateCSVDataResults(data, nombreArchivo) {
 
 export function generateCSVPointByPoint(data, fileName, ids) {
   console.log("generateCSVPointByPoint", ids);
-  const headers = ['matchId', ...new Set(data.flatMap((item) => Object.keys(item || {})))];
+  const orderedHeaders = ['time', 'score', 'homeIncident', 'awayIncident'];
+  const dynamicHeaders = [...new Set(data.flatMap((item) => Object.keys(item || {})).filter((key) => !orderedHeaders.includes(key)))];
+  const headers = ['matchId', ...orderedHeaders, ...dynamicHeaders];
   const csvData = data.map((item) =>
-    headers.map((header) => String(header === 'matchId' ? ids : (item?.[header] ?? '')).replace(/"/g, '""')).join(',')
+    headers.map((header) => `"${String(header === 'matchId' ? ids : (item?.[header] ?? '')).replace(/"/g, '""')}"`).join(',')
   ).join('\n');
   console.log('ID:', ids);
   
