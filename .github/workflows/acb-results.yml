@@ -1,9 +1,6 @@
 name: ACB Results Scraping
 
 on:
-  push:
-    branches:
-      - master
   workflow_dispatch:
     inputs:
       start_year:
@@ -92,8 +89,9 @@ jobs:
           COUNTRY="spain"
           COMPETITION_BASE="acb"
 
-          START_YEAR="${{ github.event.inputs.start_year || '2015' }}"
-          END_YEAR="${{ github.event.inputs.end_year || '2024' }}"
+          # Si no se pasan valores manualmente, usa defaults del workflow_dispatch
+          START_YEAR="${{ github.event.inputs.start_year }}"
+          END_YEAR="${{ github.event.inputs.end_year }}"
 
           echo "Generating seasons from ${START_YEAR} to ${END_YEAR}"
 
