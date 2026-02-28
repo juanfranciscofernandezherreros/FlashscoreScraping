@@ -80,7 +80,7 @@ jobs:
             ids="$IDS" \
             country="$COUNTRY" \
             league="$LEAGUE" \
-            includeMatchData=true headless
+            includeAll=true headless
 
       - name: Push CSV to basketball-data
         env:
