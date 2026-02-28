@@ -84,8 +84,7 @@ jobs:
             COMP="${BASE}-${SEASON}"
 
             echo "Generating fixtures for ${SEASON}"
-            npm run start -- action=fixtures country=${COUNTRY} league=${COMP}
-          done
+            npm run start -- action=fixtures country=france league=lnb
 
       - name: Push CSV to basketball-data
         env:
