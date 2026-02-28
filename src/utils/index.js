@@ -310,8 +310,11 @@ export const getPointByPoint = async (browser, matchId,playerIndex) => {
     const matchHistory = [];
 
     rows.forEach((row) => {
-      const score = row.querySelector('.matchHistoryRow__scoreBox').textContent.trim();
-      matchHistory.push({ score });
+      const time = row.querySelector('.matchHistoryRow__time')?.textContent.trim() || '';
+      const score = row.querySelector('.matchHistoryRow__scoreBox')?.textContent.trim() || '';
+      const homeIncident = row.querySelector('.matchHistoryRow__homeIncident')?.textContent.trim() || '';
+      const awayIncident = row.querySelector('.matchHistoryRow__awayIncident')?.textContent.trim() || '';
+      matchHistory.push({ time, score, homeIncident, awayIncident });
     });
 
     return matchHistory;
