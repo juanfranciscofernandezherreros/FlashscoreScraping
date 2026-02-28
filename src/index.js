@@ -315,11 +315,11 @@ const generateMatchCSVs = async (browser, match, competitionFolderPath, includeO
         logInfo(`Processing batch of ${batch.length} matches (${i + 1}-${i + batch.length} of ${matchList.length})...`);
         await Promise.all(batch.map(async (match) => {
           const matchId = match.matchId.replace('g_3_', '');
-          logInfo(`Processing match: ${match.matchId} URL: https://example.com/match/${matchId}`);
+          logInfo(`Processing match: ${match.matchId} URL: ${BASE_URL}/match/${matchId}/`);
           try {
             await generateMatchCSVs(browser, match, competitionFolderPath, includeOptions);
           } catch (error) {
-            logError(matchId, args, `Error processing match ${match.matchId} URL: https://example.com/match/${matchId}: ${error.message}`);
+            logError(matchId, args, `Error processing match ${match.matchId} URL: ${BASE_URL}/match/${matchId}/: ${error.message}`);
           }
         }));
       }

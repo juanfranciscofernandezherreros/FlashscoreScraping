@@ -6,6 +6,7 @@ import { BASE_URL, BASKETBALL_URL } from "../constants/index.js";
 export const getMatchIdList = async (browser, country, league) => {
   const page = await browser.newPage();
   const url = `${BASKETBALL_URL}/${country}/${league}/results/`;
+  console.log(`Opening URL: ${url}`);
   await page.goto(url);
 
   try {
@@ -44,6 +45,10 @@ async function extractEventData(page) {
     const eventElements = document.querySelectorAll('.event__match.event__match--static.event__match--twoLine');
     eventElements.forEach((element) => {
         const matchId = element?.id?.replace('g_1_', '');
+        const matchHref = element.querySelector('a.eventRowLink')?.getAttribute('href') || '';
+        const matchLink = matchHref
+          ? (matchHref.startsWith('http') ? matchHref : `${window.location.origin}${matchHref}`)
+          : '';
         const eventTime = element.querySelector('.event__time').textContent.trim();
         const homeTeam = element.querySelector('.event__participant.event__participant--home')?.textContent.trim() || null;
         const awayTeam = element.querySelector('.event__participant.event__participant--away')?.textContent.trim() || null;
@@ -69,7 +74,7 @@ async function extractEventData(page) {
         const awayScore3 = awayScore3Element ? awayScore3Element.textContent.trim() : null;
         const awayScore4 = awayScore4Element ? awayScore4Element.textContent.trim() : null;
         const awayScore5 = awayScore5Element ? awayScore5Element.textContent.trim() : null;
-      eventDataList.push({ matchId, eventTime, homeTeam, awayTeam, homeScore, awayScore,homeScore1 , homeScore2 , homeScore3 , homeScore4 , homeScore5 ,awayScore1,awayScore2,awayScore3,awayScore4,awayScore5 });
+      eventDataList.push({ matchId, eventTime, homeTeam, awayTeam, homeScore, awayScore, homeScore1, homeScore2, homeScore3, homeScore4, homeScore5, awayScore1, awayScore2, awayScore3, awayScore4, awayScore5, matchLink });
     });
 
     return eventDataList;
@@ -80,6 +85,7 @@ async function extractEventData(page) {
 export const getFixtures = async (browser, country, league) => {
   const page = await browser.newPage();
   const url = `${BASKETBALL_URL}/${country}/${league}/fixtures/`;
+  console.log(`Opening URL: ${url}`);
   await page.goto(url);  
   while (true) {
     try {
@@ -135,7 +141,7 @@ export const getFixtures = async (browser, country, league) => {
 export const getMatchData = async (browser, matchId) => {
   const page = await browser.newPage();  
   const url = `${BASE_URL}/match/${matchId}/#/match-summary/match-summary`;
-  console.log(url);
+  console.log(`Opening URL: ${url}`);
   await page.goto(url);
   await new Promise(resolve => setTimeout(resolve, 1500));
   const data = await page.evaluate(async _ => ({
@@ -195,6 +201,7 @@ export const getMatchData = async (browser, matchId) => {
 export const getStatsPlayer = async (browser, matchId) => {
   const page = await browser.newPage();  
   const url = `${BASE_URL}/match/${matchId}/#/match-summary/player-statistics/0`;
+  console.log(`Opening URL: ${url}`);
   await page.goto(url);
   await new Promise((resolve) => setTimeout(resolve, 1500));
   const playerData = await page.evaluate(() => {
@@ -232,6 +239,7 @@ export const getStatsPlayer = async (browser, matchId) => {
 export const getStatsMatch = async (browser, matchId, playerIndex) => {
   const page = await browser.newPage();    
   const url = `${BASE_URL}/match/${matchId}/#/match-summary/match-statistics/${playerIndex}`;
+  console.log(`Opening URL: ${url}`);
   
   await page.goto(url, { waitUntil: 'networkidle2' });
   await page.waitForSelector('._value_1jbkc_4._homeValue_1jbkc_9', { timeout: 5000 });
@@ -265,6 +273,7 @@ export const getDateMatch = async (browser, matchId) => {
   const match = matchId.split('_')[2];
   const page = await browser.newPage();
   const url = `${BASE_URL}/match/${match}/#/match-summary`;
+  console.log(`Opening URL: ${url}`);
   await page.goto(url);
   
   // Espera a que los elementos estén presentes en el DOM y sean visibles
@@ -302,6 +311,7 @@ const teamLinkAway = data.teamLinkAway;
 export const getPointByPoint = async (browser, matchId,playerIndex) => {
   const page = await browser.newPage();  
   const url = `${BASE_URL}/match/${matchId}/#/match-summary/point-by-point/${playerIndex}`;
+  console.log(`Opening URL: ${url}`);
   await page.goto(url);
   await new Promise(resolve => setTimeout(resolve, 1500));
   // Use page.evaluate to interact with the page and extract data.
@@ -325,6 +335,7 @@ export const getPointByPoint = async (browser, matchId,playerIndex) => {
 export const getAllBasketballResults = async (browser) => {
   const page = await browser.newPage();
   const url = `${BASKETBALL_URL}/`;
+  console.log(`Opening URL: ${url}`);
   await page.goto(url, { waitUntil: 'networkidle2', timeout: 60000 });
 
   try {
@@ -354,6 +365,10 @@ export const getAllBasketballResults = async (browser) => {
         currentRound = el.textContent.trim();
       } else if (el.classList.contains('event__match')) {
         const matchId = el.id ? el.id.replace('g_1_', '') : '';
+        const matchHref = el.querySelector('a.eventRowLink')?.getAttribute('href') || '';
+        const matchLink = matchHref
+          ? (matchHref.startsWith('http') ? matchHref : `${window.location.origin}${matchHref}`)
+          : '';
         const eventTime = el.querySelector('.event__time')?.textContent.trim() || '';
         const homeTeam = el.querySelector('.event__participant--home')?.textContent.trim() || '';
         const awayTeam = el.querySelector('.event__participant--away')?.textContent.trim() || '';
@@ -395,6 +410,7 @@ export const getAllBasketballResults = async (browser) => {
           awayScore3: awayScoreParts[2],
           awayScore4: awayScoreParts[3],
           awayScore5: awayScoreParts[4],
+          matchLink,
         });
       }
     });
@@ -409,6 +425,7 @@ export const getAllBasketballResults = async (browser) => {
 export const getMatchOdds = async (browser, matchId) => {
   const page = await browser.newPage();
   const url = `${BASE_URL}/match/${matchId}/#/odds-comparison/1x2-odds/full-time`;
+  console.log(`Opening URL: ${url}`);
   await page.goto(url, { waitUntil: 'networkidle2', timeout: 30000 });
   await new Promise(resolve => setTimeout(resolve, 2000));
 
@@ -442,6 +459,7 @@ export const getMatchOdds = async (browser, matchId) => {
 export const getMatchOverUnder = async (browser, matchId) => {
   const page = await browser.newPage();
   const url = `${BASE_URL}/match/${matchId}/#/odds-comparison/over-under/full-time`;
+  console.log(`Opening URL: ${url}`);
   await page.goto(url, { waitUntil: 'networkidle2', timeout: 30000 });
   await new Promise(resolve => setTimeout(resolve, 2000));
 
@@ -474,6 +492,7 @@ export const getMatchOverUnder = async (browser, matchId) => {
 export const getHeadToHead = async (browser, matchId) => {
   const page = await browser.newPage();
   const url = `${BASE_URL}/match/${matchId}/#/h2h/overall`;
+  console.log(`Opening URL: ${url}`);
   await page.goto(url, { waitUntil: 'networkidle2', timeout: 30000 });
   await new Promise(resolve => setTimeout(resolve, 2000));
 
@@ -512,6 +531,7 @@ export const getHeadToHead = async (browser, matchId) => {
 export const getStandings = async (browser, country, league) => {
   const page = await browser.newPage();
   const url = `${BASKETBALL_URL}/${country}/${league}/standings/`;
+  console.log(`Opening URL: ${url}`);
   await page.goto(url, { waitUntil: 'networkidle2', timeout: 30000 });
   await new Promise(resolve => setTimeout(resolve, 2000));
 
@@ -554,6 +574,7 @@ export const getCountriesAndLeagues = async (browser) => {
 
   // Phase 1: collect all unique country links from the main basketball page
   const mainPage = await browser.newPage();
+  console.log(`Opening URL: ${BASKETBALL_URL}/`);
   await mainPage.goto(`${BASKETBALL_URL}/`, { waitUntil: 'networkidle2', timeout: 60000 });
   await new Promise(resolve => setTimeout(resolve, 2000));
 
@@ -673,6 +694,7 @@ export const getCountriesAndLeagues = async (browser) => {
   for (const countryData of countries) {
     const countryPage = await browser.newPage();
     const countryUrl = `https://www.flashscore.com${countryData.countryHref}`;
+    console.log(`Opening URL: ${countryUrl}`);
     try {
       // Country pages can be slower to load than the main page; use a generous timeout
       await countryPage.goto(countryUrl, { waitUntil: 'networkidle2', timeout: 60000 });
@@ -754,6 +776,7 @@ export const getCountriesAndLeagues = async (browser) => {
 export const getMatchLineups = async (browser, matchId) => {
   const page = await browser.newPage();
   const url = `${BASE_URL}/match/${matchId}/#/match-summary/lineups`;
+  console.log(`Opening URL: ${url}`);
   await page.goto(url, { waitUntil: 'networkidle2', timeout: 30000 });
   await new Promise(resolve => setTimeout(resolve, 2000));
 
