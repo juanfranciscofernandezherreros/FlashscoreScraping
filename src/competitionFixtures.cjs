@@ -19,6 +19,9 @@ if (kvArgs.country && kvArgs.league) {
     [country, league] = rawArgs;
 }
 
+if (!country) country = process.env.npm_config_country;
+if (!league) league = process.env.npm_config_league;
+
 if (!country) country = 'France';
 if (!league) league = 'lnb';
 

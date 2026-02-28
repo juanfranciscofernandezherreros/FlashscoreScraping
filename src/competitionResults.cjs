@@ -19,6 +19,9 @@ if (kvArgs.country && kvArgs.league) {
     [country, league] = rawArgs;
 }
 
+if (!country) country = process.env.npm_config_country;
+if (!league) league = process.env.npm_config_league;
+
 if (!country || !league) {
     console.error('Country and league must be specified.');
     process.exit(1);

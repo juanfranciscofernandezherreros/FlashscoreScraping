@@ -224,6 +224,22 @@ const generateMatchCSVs = async (browser, match, competitionFolderPath, includeO
     if (arg === "includeAll=true") args.includeAll = true;
   });
 
+  // npm run start key=value (without --) exposes values through npm_config_* env vars
+  args.country = args.country ?? process.env.npm_config_country ?? null;
+  args.ids = args.ids ?? process.env.npm_config_ids ?? null;
+  args.league = args.league ?? process.env.npm_config_league ?? null;
+  args.competition = args.competition ?? process.env.npm_config_competition ?? null;
+  args.action = args.action ?? process.env.npm_config_action ?? null;
+  if (!args.includeMatchData && process.env.npm_config_includematchdata === "true") args.includeMatchData = true;
+  if (!args.includeStatsPlayer && process.env.npm_config_includestatsplayer === "true") args.includeStatsPlayer = true;
+  if (!args.includeStatsMatch && process.env.npm_config_includestatsmatch === "true") args.includeStatsMatch = true;
+  if (!args.includePointByPoint && process.env.npm_config_includepointbypoint === "true") args.includePointByPoint = true;
+  if (!args.includeOdds && process.env.npm_config_includeodds === "true") args.includeOdds = true;
+  if (!args.includeH2H && process.env.npm_config_includeh2h === "true") args.includeH2H = true;
+  if (!args.includeStandings && process.env.npm_config_includestandings === "true") args.includeStandings = true;
+  if (!args.includeLineups && process.env.npm_config_includelineups === "true") args.includeLineups = true;
+  if (!args.includeAll && process.env.npm_config_includeall === "true") args.includeAll = true;
+
   // If includeAll is set, enable all data extraction options
   if (args.includeAll) {
     args.includeMatchData = true;
@@ -254,7 +270,7 @@ const generateMatchCSVs = async (browser, match, competitionFolderPath, includeO
 
   // Base folder path is always './src/csv'
   const baseFolderPath = path.join(process.cwd(), 'src', 'csv');
-  const folderName = args.competition ? args.competition : `${args.country}_${args.league}`;
+  const folderName = args.competition ? args.competition : (args.country && args.league ? `${args.country}_${args.league}` : 'general');
   const competitionFolderPath = path.join(baseFolderPath, 'results', folderName);
   const resultsFolderPath = path.join(baseFolderPath, 'results');
   const fixturesFolderPath = path.join(baseFolderPath, 'fixtures');
