@@ -6,6 +6,7 @@
   "type": "module",
   "scripts": {
     "test": "node src/testBasketballCsv.js && node src/testAllFunctionalities.js",
+    "test:cucumber": "cucumber-js",
     "start": "node src/index.js",
     "competitions": "node src/scrapeCountries.js",
     "read-csv": "node src/readAllCsv.js",
@@ -28,5 +29,8 @@
   "dependencies": {
     "csv-parser": "^3.0.0",
     "puppeteer": "^24.0.0"
+  },
+  "devDependencies": {
+    "@cucumber/cucumber": "^12.7.0"
   }
 }
