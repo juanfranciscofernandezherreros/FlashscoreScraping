@@ -32,6 +32,7 @@ const mockBasketballData = [
     awayScore3: '24',
     awayScore4: '26',
     awayScore5: '',
+    matchLink: 'https://www.flashscore.com/match/basketball/lakers-celtics/summary/?mid=abc123',
   },
   {
     country: 'SPAIN',
@@ -57,6 +58,7 @@ const mockBasketballData = [
     awayScore3: '23',
     awayScore4: '20',
     awayScore5: '',
+    matchLink: 'https://www.flashscore.com/match/basketball/realmadrid-barcelona/summary/?mid=def456',
   },
   {
     country: 'EUROPE',
@@ -82,6 +84,7 @@ const mockBasketballData = [
     awayScore3: '20',
     awayScore4: '23',
     awayScore5: '8',
+    matchLink: 'https://www.flashscore.com/match/basketball/olympiacos-panathinaikos/summary/?mid=ghi789',
   },
 ];
 
@@ -125,7 +128,7 @@ async function testGenerateCSVDataResults() {
   const lines = content.trim().split('\n');
 
   // Check header row
-  const expectedHeaders = 'country,league,competition,round,matchId,eventTime,state,matchStatus,result,homeTeam,awayTeam,homeScore,awayScore,homeScore1,homeScore2,homeScore3,homeScore4,homeScore5,awayScore1,awayScore2,awayScore3,awayScore4,awayScore5';
+  const expectedHeaders = 'country,league,competition,round,matchId,eventTime,state,matchStatus,result,homeTeam,awayTeam,homeScore,awayScore,homeScore1,homeScore2,homeScore3,homeScore4,homeScore5,awayScore1,awayScore2,awayScore3,awayScore4,awayScore5,matchLink';
   assert(lines[0] === expectedHeaders, 'CSV header row matches expected columns');
 
   // Check number of data rows (3 matches)
@@ -157,6 +160,7 @@ async function testGenerateCSVDataResults() {
   assert(row3[9] === 'Olympiacos', 'Third row column 9 is Olympiacos');
   assert(row3[17] === '10', 'Third row column 17 (homeScore5) is OT score 10');
   assert(row3[22] === '8', 'Third row column 22 (awayScore5) is OT score 8');
+  assert(row1[23] === 'https://www.flashscore.com/match/basketball/lakers-celtics/summary/?mid=abc123', 'First row column 23 is match link');
 
   console.log(`\n  CSV content preview:\n${lines.slice(0, 4).map(l => '    ' + l).join('\n')}`);
 }
