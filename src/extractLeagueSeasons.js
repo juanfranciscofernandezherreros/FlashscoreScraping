@@ -132,7 +132,6 @@ const run = async () => {
   });
 
   const rows = await readLeagueRows(args.source);
-  const countryFilter = String(args.country || '').trim().toLowerCase();
   const disableSandbox = process.env.PUPPETEER_DISABLE_SANDBOX === 'true' || process.env.CI === 'true';
   const browser = await puppeteer.launch({
     headless: true,
@@ -144,7 +143,7 @@ const run = async () => {
     const output = [];
     for (const row of rows) {
       const country = getFirstValue(row, ['country', 'Country', 'país', 'País', 'pais', 'Pais']);
-      if (!isCountryMatch(country, countryFilter)) continue;
+      if (!isCountryMatch(country, args.country)) continue;
       const leagueHref = getLeagueHref(row);
       if (!leagueHref) continue;
       const archiveUrl = buildArchiveUrl(leagueHref);

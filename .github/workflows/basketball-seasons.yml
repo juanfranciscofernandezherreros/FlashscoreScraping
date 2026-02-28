@@ -75,9 +75,12 @@ jobs:
           git config user.email "juanfranciscofernandezherreros@gmail.com"
 
           git add basketball_league_seasons.csv
-          if git diff --cached --quiet; then exit 0; fi
+          if git diff --cached --quiet; then
+            echo "No changes to commit for basketball_league_seasons.csv"
+            exit 0
+          fi
 
-          git commit -m "Update basketball league seasons $(date -u) [skip ci]"
+          git commit -m "Update basketball league seasons (${{ github.event.inputs.country || 'all' }}) $(date -u) [skip ci]"
           git push origin HEAD:master
 
       - uses: actions/upload-artifact@v4
