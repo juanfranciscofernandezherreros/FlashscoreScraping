@@ -57,8 +57,10 @@ npm run start ids=g_3_Uix0vJJK includePointByPoint=true headless
 npm run start country=spain league=acb action=results headless
 
 npm run results -- spain acb-2005-2006
+npm run results -- country=spain league=acb
 
 npm run fixtures -- world olympic-games
+npm run fixtures -- country=world league=olympic-games
 
 npm run basketball
 
