@@ -268,10 +268,10 @@ async function testGenerateCSVStatsMatchEmptyData() {
 async function testGenerateCSVPointByPoint() {
   console.log('\n--- Test: generateCSVPointByPoint ---');
   const data = [
-    { score: '2 - 0' },
-    { score: '2 - 3' },
-    { score: '5 - 3' },
-    { score: '7 - 3' },
+    { time: '09:53', score: '2 - 0', homeIncident: '2PT Field Goal', awayIncident: '' },
+    { time: '08:44', score: '2 - 3', homeIncident: '', awayIncident: '3PT Field Goal' },
+    { time: '07:20', score: '5 - 3', homeIncident: '3PT Field Goal', awayIncident: '' },
+    { time: '05:10', score: '7 - 3', homeIncident: '2PT Field Goal', awayIncident: '' },
   ];
   const filePath = path.join(TEST_OUTPUT_DIR, 'TEST_POINT_BY_POINT');
   const matchId = 'g_3_test123';
@@ -284,8 +284,8 @@ async function testGenerateCSVPointByPoint() {
   const content = fs.readFileSync(csvPath, 'utf-8');
   const lines = content.trim().split('\n');
   assert(lines.length === 4, `Has 4 data rows (got ${lines.length})`);
-  assert(lines[0] === 'g_3_test123,2 - 0', `First row has matchId and score (got ${lines[0]})`);
-  assert(lines[3] === 'g_3_test123,7 - 3', `Last row is correct (got ${lines[3]})`);
+  assert(lines[0] === 'g_3_test123,09:53,2 - 0,2PT Field Goal,', `First row has all point-by-point fields (got ${lines[0]})`);
+  assert(lines[3] === 'g_3_test123,05:10,7 - 3,2PT Field Goal,', `Last row is correct (got ${lines[3]})`);
 }
 
 async function testGenerateCSVPointByPointEmptyData() {
