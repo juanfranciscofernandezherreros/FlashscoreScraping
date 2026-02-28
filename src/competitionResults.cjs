@@ -1,8 +1,23 @@
 const { execSync } = require('child_process');
 
 // Obtener los argumentos de la línea de comandos
-const args = process.argv.slice(2);
-const [country, league] = args;
+const rawArgs = process.argv.slice(2);
+
+let country, league;
+
+// Support both key=value format (country=spain league=acb) and positional format (spain acb)
+const kvArgs = {};
+rawArgs.forEach(arg => {
+    if (arg.startsWith('country=')) kvArgs.country = arg.slice('country='.length);
+    else if (arg.startsWith('league=')) kvArgs.league = arg.slice('league='.length);
+});
+
+if (kvArgs.country && kvArgs.league) {
+    country = kvArgs.country;
+    league = kvArgs.league;
+} else {
+    [country, league] = rawArgs;
+}
 
 if (!country || !league) {
     console.error('Country and league must be specified.');
