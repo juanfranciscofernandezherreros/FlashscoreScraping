@@ -73,6 +73,14 @@ npm run basketball:seasons
 # Optional: set source and output
 node src/extractLeagueSeasons.js source=https://raw.githubusercontent.com/juanfranciscofernandezherreros/basketball-data/master/basketball_leagues.csv output=src/csv/BASKETBALL_LEAGUE_SEASONS
 
+# Extract countries and leagues from Flashscore basketball left menu
+npm run competitions
+
+## GitHub Actions
+
+- Use the **Scrape Countries and Leagues** workflow (`.github/workflows/competitions.yml`) from the Actions tab.
+- It runs `npm run competitions` and uploads generated CSV/log files as workflow artifacts.
+
 ## includeStatsMatch step by step
 
 When `includeStatsMatch=true` is used, the scraper loop (`playerIndex` from `0` to `4`) calls `getStatsMatch` once per period. In each call it:
